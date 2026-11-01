@@ -1,0 +1,2630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embedded GPU — Corrected Master Q&A Guide</title>
+<style>
+  :root {
+    --bg: #0a0d12; --surface: #141821; --surface-raised: #1c2128; --surface-strong: #252b35;
+    --border: #2a3038; --border-light: #3a414c;
+    --text-primary: #e6edf3; --text-secondary: #adbac7; --text-tertiary: #768390;
+    --nv-green: #76b900; --nv-green-soft: rgba(118,185,0,0.12);
+    --cyan: #00d4ff; --cyan-soft: rgba(0,212,255,0.1);
+    --purple: #b794f4; --purple-soft: rgba(183,148,244,0.1);
+    --orange: #ff9b50; --orange-soft: rgba(255,155,80,0.1);
+    --red: #ff6b6b; --red-soft: rgba(255,107,107,0.1);
+    --yellow: #ffc857; --yellow-soft: rgba(255,200,87,0.1);
+    --font-sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono: "JetBrains Mono","SF Mono","Fira Code",Consolas,monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font-sans); background: var(--bg); color: var(--text-primary); line-height: 1.7; font-size: 15px; }
+  .wrap { display: flex; min-height: 100vh; }
+  .sidebar { width: 290px; background: var(--surface); border-right: 1px solid var(--border); padding: 24px 18px; position: fixed; top:0; left:0; bottom:0; overflow-y:auto; z-index:100; }
+  .logo { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 4px; color: var(--nv-green); }
+  .logo-sub { font-size: 11px; color: var(--text-tertiary); margin-bottom: 20px; }
+  .progress-wrap { margin-bottom: 18px; }
+  .progress-bg { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height:100%; background: linear-gradient(90deg, var(--nv-green), var(--cyan)); width:0%; transition: width 0.4s ease; }
+  .progress-txt { font-size:11px; color:var(--text-tertiary); margin-top:6px; text-align:right; }
+  .search-box { width:100%; padding:9px 13px; border-radius:8px; border:1px solid var(--border); background:var(--surface-raised); color:var(--text-primary); font-family:inherit; font-size:13px; margin-bottom:14px; outline:none; }
+  .search-box:focus { border-color: var(--nv-green); }
+  .search-results { position:absolute; top:125px; left:18px; right:18px; background:var(--surface-raised); border:1px solid var(--border); border-radius:10px; max-height:300px; overflow-y:auto; box-shadow:0 8px 24px rgba(0,0,0,0.5); display:none; z-index:200; }
+  .search-result { padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--border); font-size:13px; }
+  .search-result:hover { background:var(--surface-strong); }
+  .sr-title { font-weight:600; color:var(--text-primary); }
+  .sr-snippet { color:var(--text-tertiary); font-size:12px; margin-top:2px; }
+  .unit-btn { width:100%; text-align:left; padding:10px 14px; border-radius:8px; border:none; background:transparent; cursor:pointer; font-size:13px; font-weight:600; color:var(--text-secondary); transition:all 0.15s; font-family:inherit; display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .unit-btn:hover { background:var(--surface-raised); color:var(--text-primary); }
+  .unit-btn.active { background:var(--surface-strong); color:var(--nv-green); }
+  .unit-btn .ch { font-size:10px; color:var(--text-tertiary); transition:transform 0.2s; }
+  .unit-btn.active .ch { transform: rotate(90deg); color:var(--nv-green); }
+  .sec-list { margin-left:8px; margin-bottom:12px; display:none; }
+  .sec-list.open { display:block; }
+  .sec-link { display:block; padding:6px 12px 6px 22px; font-size:12px; color:var(--text-tertiary); text-decoration:none; border-radius:6px; transition:all 0.15s; cursor:pointer; border-left:2px solid transparent; line-height:1.4; }
+  .sec-link:hover, .sec-link.active { color:var(--text-primary); background:var(--surface-raised); border-left-color:var(--nv-green); }
+  .sec-link .tag-mini { display:inline-block; margin-left:6px; font-size:9px; padding:1px 5px; border-radius:3px; vertical-align:middle; }
+  .sec-link .tag-mini.add { background:var(--yellow-soft); color:var(--yellow); }
+  .sec-link .tag-mini.new { background:var(--cyan-soft); color:var(--cyan); }
+  .sec-link .tag-mini.fix { background:var(--red-soft); color:var(--red); }
+  .main { margin-left:290px; flex:1; padding:32px 48px; max-width:980px; }
+  .mobile-toggle { display:none; position:fixed; top:14px; left:14px; z-index:300; background:var(--surface-strong); border:1px solid var(--border); color:var(--text-primary); padding:8px 12px; border-radius:8px; cursor:pointer; font-size:14px; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:90; }
+  .overlay.open { display:block; }
+
+  .q-block { margin-bottom:48px; }
+  .q-header { background:linear-gradient(135deg, var(--surface) 0%, var(--surface-raised) 100%); border:1px solid var(--border); border-left:4px solid var(--nv-green); border-radius:12px; padding:20px 24px; margin-bottom:24px; }
+  .q-num { font-size:12px; font-weight:700; color:var(--nv-green); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }
+  .q-title { font-size:19px; font-weight:700; line-height:1.35; color:var(--text-primary); }
+  .q-marks { display:inline-block; margin-top:10px; padding:3px 10px; border-radius:6px; background:var(--nv-green-soft); color:var(--nv-green); font-size:11px; font-weight:700; }
+  h2 { font-size:18px; font-weight:700; margin-top:32px; margin-bottom:14px; color:var(--text-primary); padding-bottom:8px; border-bottom:1px solid var(--border); }
+  h3 { font-size:16px; font-weight:700; margin-top:24px; margin-bottom:10px; color:var(--cyan); }
+  h4 { font-size:14px; font-weight:700; margin-top:18px; margin-bottom:8px; color:var(--text-secondary); }
+  p { margin-bottom:12px; color:var(--text-secondary); }
+  ul, ol { margin-bottom:16px; padding-left:24px; color:var(--text-secondary); }
+  li { margin-bottom:6px; }
+  li strong { color:var(--text-primary); }
+  code { font-family:var(--font-mono); font-size:13px; background:var(--surface-strong); padding:2px 6px; border-radius:4px; color:var(--nv-green); }
+  .mark-tag { display:inline-block; padding:2px 8px; border-radius:5px; background:var(--cyan-soft); color:var(--cyan); font-size:11px; font-weight:700; margin-bottom:10px; }
+  .note { border-left:3px solid var(--nv-green); padding:12px 16px; margin:14px 0; color:var(--text-secondary); font-size:13px; background:var(--nv-green-soft); border-radius:0 8px 8px 0; }
+  .note strong { color:var(--nv-green); }
+  .warn { border-left:3px solid var(--yellow); padding:12px 16px; margin:14px 0; color:var(--text-secondary); font-size:13px; background:var(--yellow-soft); border-radius:0 8px 8px 0; }
+  .warn strong { color:var(--yellow); }
+  .arch-note { border-left:3px solid var(--orange); padding:12px 16px; margin:14px 0; color:var(--text-secondary); font-size:12.5px; background:var(--orange-soft); border-radius:0 8px 8px 0; }
+  .arch-note strong { color:var(--orange); }
+  .add-tag { display:inline-block; padding:2px 8px; border-radius:5px; background:var(--yellow-soft); color:var(--yellow); font-size:10px; font-weight:700; margin-left:8px; vertical-align:middle; }
+  .fix-tag { display:inline-block; padding:2px 8px; border-radius:5px; background:var(--red-soft); color:var(--red); font-size:10px; font-weight:700; margin-left:8px; vertical-align:middle; }
+  .new-tag { display:inline-block; padding:2px 8px; border-radius:5px; background:var(--cyan-soft); color:var(--cyan); font-size:10px; font-weight:700; margin-left:8px; vertical-align:middle; }
+
+  .code-block { background:#0d1117; border:1px solid var(--border); border-radius:10px; padding:16px; overflow-x:auto; margin:14px 0; position:relative; }
+  .code-block pre { font-family:var(--font-mono); font-size:12.5px; line-height:1.6; color:#c9d1d9; margin:0; white-space:pre; }
+  .code-block .kw { color:#ff7b72; }
+  .code-block .type { color:#79c0ff; }
+  .code-block .str { color:#a5d6ff; }
+  .code-block .com { color:#8b949e; font-style:italic; }
+  .code-block .fn { color:#d2a8ff; }
+  .code-block .num { color:#79c0ff; }
+  .code-block .macro { color:#ffa657; }
+  .code-label { position:absolute; top:8px; right:12px; font-size:10px; color:var(--text-tertiary); font-family:var(--font-mono); background:var(--surface); padding:2px 8px; border-radius:4px; }
+  .code-fix-marker { background:rgba(118,185,0,0.15); display:block; margin:0 -16px; padding:0 16px; border-left:3px solid var(--nv-green); }
+
+  table { width:100%; border-collapse:collapse; margin:14px 0; font-size:12.5px; background:var(--surface); border-radius:8px; overflow:hidden; }
+  th, td { padding:10px 12px; text-align:left; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { font-weight:700; color:var(--text-primary); background:var(--surface-raised); font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+  td { color:var(--text-secondary); }
+  td strong { color:var(--nv-green); }
+  tr:hover td { background:var(--surface-raised); }
+
+  .diagram-box { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin:20px 0; overflow-x:auto; }
+  .diagram-title { text-align:center; font-size:12px; font-weight:700; color:var(--nv-green); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px; }
+
+  .mem-hierarchy { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .mem-block { padding:14px 20px; border:1px solid var(--border); border-radius:8px; background:var(--surface-raised); text-align:center; min-width:380px; }
+  .mem-block .mb-name { font-weight:700; font-size:13px; color:var(--text-primary); margin-bottom:4px; }
+  .mem-block .mb-desc { font-size:11px; color:var(--text-tertiary); }
+  .mem-block.host { border-color:var(--cyan); background:var(--cyan-soft); }
+  .mem-block.host .mb-name { color:var(--cyan); }
+  .mem-block.device { border-color:var(--purple); background:var(--purple-soft); }
+  .mem-block.device .mb-name { color:var(--purple); }
+  .mem-block.sm { border-color:var(--nv-green); background:var(--nv-green-soft); }
+  .mem-block.sm .mb-name { color:var(--nv-green); }
+  .mem-sub-blocks { display:flex; gap:8px; margin-top:8px; }
+  .mem-sub { flex:1; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); font-size:10px; text-align:center; }
+  .mem-sub strong { display:block; color:var(--text-primary); margin-bottom:2px; }
+  .mem-arrow { color:var(--text-tertiary); font-size:14px; }
+  .mem-arrow span { font-size:10px; display:block; }
+
+  .thread-grid-vis { display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .grid-box { border:2px solid var(--nv-green); border-radius:10px; padding:16px; background:var(--nv-green-soft); }
+  .grid-label { text-align:center; font-weight:700; color:var(--nv-green); font-size:13px; margin-bottom:10px; }
+  .blocks-row { display:flex; gap:12px; }
+  .block-box { border:1px solid var(--cyan); border-radius:8px; padding:10px; background:var(--cyan-soft); }
+  .block-label { text-align:center; font-weight:700; color:var(--cyan); font-size:11px; margin-bottom:8px; }
+  .threads-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; }
+  .thread-cell { width:18px; height:18px; background:var(--surface-strong); border:1px solid var(--border-light); border-radius:3px; }
+  .thread-cell.active { background:var(--nv-green); border-color:var(--nv-green); }
+
+  .exec-flow { display:flex; flex-direction:column; gap:10px; }
+  .exec-stage { padding:12px 16px; border:1px solid var(--border); border-radius:8px; background:var(--surface-raised); display:flex; align-items:center; gap:14px; }
+  .exec-stage.host { border-left:4px solid var(--cyan); }
+  .exec-stage.device { border-left:4px solid var(--nv-green); }
+  .exec-stage-num { width:28px; height:28px; border-radius:50%; background:var(--nv-green); color:var(--bg); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .exec-stage.host .exec-stage-num { background:var(--cyan); }
+  .exec-stage-content strong { color:var(--text-primary); font-size:13px; }
+  .exec-stage-content div { font-size:11px; color:var(--text-tertiary); margin-top:2px; }
+  .exec-arrow { text-align:center; color:var(--text-tertiary); font-size:14px; margin:-4px 0; }
+
+  .sm-card { border:1px solid var(--nv-green); border-radius:8px; padding:12px; background:var(--nv-green-soft); min-width:200px; }
+  .sm-card-title { text-align:center; font-weight:700; color:var(--nv-green); font-size:11px; margin-bottom:8px; }
+  .sm-card-item { padding:6px 8px; background:var(--surface); border-radius:4px; margin-bottom:4px; font-size:10px; color:var(--text-secondary); text-align:center; }
+
+  .multi-gpu-grid { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+  .gpu-card { border:1px solid var(--purple); background:var(--purple-soft); border-radius:8px; padding:12px; min-width:200px; text-align:center; }
+  .gpu-card-title { font-weight:700; color:var(--purple); font-size:12px; margin-bottom:6px; }
+  .gpu-card-item { padding:5px 8px; background:var(--surface); border-radius:4px; margin-bottom:4px; font-size:10px; color:var(--text-secondary); }
+  .p2p-link { color:var(--nv-green); font-size:18px; align-self:center; }
+
+  .nvcc-flow { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .nvcc-stage { padding:10px 18px; border:1px solid var(--nv-green); background:var(--nv-green-soft); border-radius:8px; font-size:12px; color:var(--text-primary); text-align:center; min-width:320px; }
+  .nvcc-stage strong { color:var(--nv-green); }
+  .nvcc-stage.host { border-color:var(--cyan); background:var(--cyan-soft); }
+  .nvcc-stage.host strong { color:var(--cyan); }
+  .nvcc-stage.device { border-color:var(--purple); background:var(--purple-soft); }
+  .nvcc-stage.device strong { color:var(--purple); }
+  .nvcc-arrow { color:var(--nv-green); font-size:14px; }
+
+  .opencl-arch { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .opencl-host { padding:14px 28px; border:2px solid var(--cyan); background:var(--cyan-soft); border-radius:8px; font-weight:700; color:var(--cyan); font-size:13px; }
+  .opencl-devices { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .opencl-device { border:1px solid var(--purple); background:var(--purple-soft); border-radius:8px; padding:12px; min-width:220px; }
+  .opencl-device-title { text-align:center; font-weight:700; color:var(--purple); font-size:12px; margin-bottom:8px; }
+  .cu-row { display:flex; gap:6px; }
+  .cu-box { flex:1; padding:8px 4px; background:var(--surface); border:1px solid var(--border); border-radius:4px; text-align:center; font-size:9px; font-weight:600; color:var(--text-secondary); }
+  .cu-pe { font-size:8px; color:var(--text-tertiary); margin-top:2px; }
+
+  .csr-vis { display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .csr-matrix { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; }
+  .csr-cell { width:40px; height:40px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:4px; font-family:var(--font-mono); font-size:13px; font-weight:600; }
+  .csr-cell.nz { background:var(--nv-green-soft); border-color:var(--nv-green); color:var(--nv-green); }
+  .csr-cell.zero { background:var(--surface); color:var(--text-tertiary); }
+  .csr-arrays { display:flex; flex-direction:column; gap:10px; width:100%; max-width:500px; }
+  .csr-array-row { display:flex; align-items:center; gap:10px; }
+  .csr-array-label { font-family:var(--font-mono); font-size:11px; color:var(--cyan); min-width:90px; font-weight:600; }
+  .csr-array-cells { display:flex; gap:3px; }
+  .csr-array-cell { width:36px; height:28px; display:flex; align-items:center; justify-content:center; background:var(--surface-raised); border:1px solid var(--border); border-radius:4px; font-family:var(--font-mono); font-size:11px; color:var(--text-primary); }
+
+  .scan-tree { display:flex; flex-direction:column; align-items:center; padding:16px 0; }
+  .tree-phase-label { font-size:11px; font-weight:700; color:var(--nv-green); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; }
+  .tree-row { display:flex; gap:8px; justify-content:center; margin-bottom:6px; }
+  .tree-node { width:36px; height:28px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); background:var(--surface-raised); border-radius:4px; font-family:var(--font-mono); font-size:10px; color:var(--text-secondary); }
+  .tree-node.active { background:var(--nv-green-soft); border-color:var(--nv-green); color:var(--nv-green); font-weight:700; }
+  .tree-node.root { background:var(--cyan-soft); border-color:var(--cyan); color:var(--cyan); }
+  .tree-op { color:var(--text-tertiary); font-size:14px; align-self:center; }
+
+  .conv-1d { display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .conv-array { display:flex; gap:2px; }
+  .conv-elem { width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:var(--surface-raised); border:1px solid var(--border); border-radius:4px; font-family:var(--font-mono); font-size:12px; color:var(--text-primary); }
+  .conv-elem.masked { background:var(--nv-green-soft); border-color:var(--nv-green); color:var(--nv-green); font-weight:700; }
+  .conv-elem.output { background:var(--cyan-soft); border-color:var(--cyan); color:var(--cyan); font-weight:700; }
+  .conv-elem.ghost { background:var(--surface); border:1px dashed var(--border-light); color:var(--text-tertiary); }
+  .conv-mask-label { font-size:11px; color:var(--text-tertiary); margin-top:4px; }
+  .conv-formula { font-family:var(--font-mono); font-size:12px; color:var(--nv-green); background:var(--surface); padding:8px 14px; border-radius:6px; border:1px solid var(--border); margin:8px 0; }
+
+  .self-tune-flow { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .st-step { padding:10px 18px; border:1px solid var(--nv-green); background:var(--nv-green-soft); border-radius:8px; font-size:12px; color:var(--text-primary); text-align:center; min-width:280px; }
+  .st-step strong { color:var(--nv-green); }
+  .st-arrow { color:var(--nv-green); font-size:14px; }
+
+  .dnn-pipeline { display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:center; }
+  .dnn-stage { padding:12px 14px; border:1px solid var(--border); background:var(--surface-raised); border-radius:8px; text-align:center; min-width:130px; }
+  .dnn-stage strong { display:block; color:var(--purple); font-size:12px; margin-bottom:4px; }
+  .dnn-stage div { font-size:10px; color:var(--text-tertiary); }
+  .dnn-arrow { color:var(--purple); font-size:16px; }
+
+  .dp-tree { display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 0; }
+  .dp-node { padding:10px 18px; border:1px solid var(--nv-green); background:var(--nv-green-soft); border-radius:8px; font-size:12px; color:var(--text-primary); }
+  .dp-node.parent { border-color:var(--cyan); background:var(--cyan-soft); }
+  .dp-node strong { color:var(--nv-green); }
+  .dp-node.parent strong { color:var(--cyan); }
+  .dp-children { display:flex; gap:12px; }
+  .dp-arrow { color:var(--text-tertiary); font-size:14px; }
+
+  .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0; }
+  .compare-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .compare-card h4 { margin-top:0; padding-bottom:8px; border-bottom:1px solid var(--border); text-align:center; color:var(--cyan); }
+
+  .math-block { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--purple); border-radius:8px; padding:14px 18px; margin:14px 0; text-align:center; font-family:var(--font-mono); font-size:14px; color:var(--text-primary); }
+  .math-block .var { color:var(--cyan); }
+  .math-block .op { color:var(--nv-green); }
+
+  .top-nav { display:flex; justify-content:space-between; align-items:center; margin-top:32px; padding-top:16px; border-top:1px solid var(--border); }
+  .nav-btn { padding:8px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface-raised); cursor:pointer; font-family:inherit; font-size:13px; color:var(--text-primary); transition:all 0.15s; }
+  .nav-btn:hover { background:var(--surface-strong); border-color:var(--nv-green); }
+  .nav-btn:disabled { opacity:0.3; cursor:not-allowed; }
+
+  .flashcard { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin:14px 0; cursor:pointer; transition:all 0.2s; min-height:120px; display:flex; flex-direction:column; justify-content:center; }
+  .flashcard:hover { border-color:var(--nv-green); transform:translateY(-1px); }
+  .fc-q { font-size:16px; font-weight:700; text-align:center; color:var(--text-primary); }
+  .fc-a { font-size:13px; color:var(--text-secondary); text-align:center; margin-top:12px; display:none; line-height:1.6; }
+  .flashcard.flipped .fc-q { display:none; }
+  .flashcard.flipped .fc-a { display:block; }
+  .fc-hint { font-size:11px; color:var(--text-tertiary); text-align:center; margin-top:8px; }
+  .flashcard.flipped .fc-hint { display:none; }
+
+  .qa-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--cyan); border-radius:10px; padding:16px 20px; margin:12px 0; }
+  .qa-card .qa-q { font-size:14px; font-weight:700; color:var(--cyan); margin-bottom:8px; }
+  .qa-card .qa-a { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+  .qa-card .qa-a strong { color:var(--text-primary); }
+  .qa-card .qa-a ul, .qa-card .qa-a ol { margin:6px 0 6px 18px; font-size:13px; }
+
+  .section { display:none; }
+  .section.active { display:block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .unit-heading { font-size:26px; font-weight:800; margin-bottom:8px; color:var(--text-primary); letter-spacing:-0.5px; }
+  .unit-sub { font-size:14px; color:var(--text-tertiary); margin-bottom:32px; }
+
+  .correction-banner { background:linear-gradient(135deg, rgba(255,107,107,0.08), rgba(255,200,87,0.08)); border:1px solid var(--yellow); border-radius:12px; padding:20px 24px; margin-bottom:32px; }
+  .correction-banner h3 { color:var(--yellow); margin-top:0; }
+  .correction-banner ul { font-size:13px; }
+  .correction-banner li { margin-bottom:4px; }
+
+  @media (max-width:900px) {
+    .sidebar { transform:translateX(-100%); transition:transform 0.3s; }
+    .sidebar.open { transform:translateX(0); }
+    .main { margin-left:0; padding:20px; max-width:100%; }
+    .mobile-toggle { display:block; }
+    .compare-grid { grid-template-columns:1fr; }
+    .mem-block { min-width:auto; width:100%; }
+  }
+</style>
+</head>
+<body>
+<button class="mobile-toggle" onclick="toggleSidebar()">☰ Menu</button>
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="wrap">
+<aside class="sidebar" id="sidebar">
+  <div class="logo">▚ EMBEDDED GPU</div>
+  <div class="logo-sub">Corrected Master Q&A Guide</div>
+  <div class="progress-wrap">
+    <div class="progress-bg"><div class="progress-fill" id="progressBar"></div></div>
+    <div class="progress-txt" id="progressText">0% complete</div>
+  </div>
+  <input type="text" class="search-box" id="searchBox" placeholder="Search topics..." autocomplete="off">
+  <div id="searchResults" class="search-results"></div>
+  <nav id="sidebarNav"></nav>
+</aside>
+<main class="main" id="mainContent">
+<div id="contentArea"></div>
+</main>
+</div>
+<script>
+
+const courseData = {
+  units: [
+    {
+      id: "u3", title: "Unit III: GPU Programming & Execution",
+      sections: [
+        {
+          id: "u3pa", title: "Part-A: 2-Mark Questions",
+          content: `
+<div class="unit-heading">Unit III: GPU Programming & Execution Models</div>
+<div class="unit-sub">Part-A — 2-Mark Quick Revision</div>
+
+<div class="correction-banner">
+  <h3>📌 Tags used in this guide</h3>
+  <ul>
+    <li><span class="new-tag">NEW</span> — topic from the PDF that was missing in the earlier HTML and has now been added.</li>
+    <li><span class="fix-tag">FIXED</span> — answer that contained a technical error and has been corrected.</li>
+    <li><span class="add-tag">ADDITIONAL</span> — useful exam material that goes beyond the supplied PDFs (clearly marked, not presented as notes).</li>
+  </ul>
+</div>
+
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Part-A · 2 Marks Each</div>
+  <div class="q-title">Short Answer Questions</div>
+  <div class="q-marks">2M × 2 = 4 Marks</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q1: Define the APOD cycle and explain its role in CUDA application optimization. <span class="add-tag">ADDITIONAL</span></div>
+  <div class="qa-a">
+    <p><em>Note: APOD is asked in the exam paper but is not explicitly covered in the supplied Unit III PDF. Treat this as additional exam material.</em></p>
+    <p><strong>Definition:</strong> APOD stands for <strong>Assess, Parallelize, Optimize, and Deploy</strong>. It is NVIDIA's structured, iterative engineering methodology designed to guide the development and performance tuning of CUDA-accelerated applications.</p>
+    <p><strong>Role in Optimization:</strong></p>
+    <ol>
+      <li><strong>Assess:</strong> Profile the application to identify computational bottlenecks suitable for GPU acceleration.</li>
+      <li><strong>Parallelize:</strong> Refactor serial code sections into parallel CUDA kernels.</li>
+      <li><strong>Optimize:</strong> Tune memory access patterns, warp execution efficiency, and resource allocation to eliminate bottlenecks.</li>
+      <li><strong>Deploy:</strong> Validate accuracy and deploy the optimized application to production systems.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q2: Identify common challenges encountered by CUDA programmers during development.</div>
+  <div class="qa-a">
+    <p><em>Source: Unit III PDF — "Optimizing CUDA Applications" section.</em></p>
+    <ul>
+      <li><strong>PCIe Data Transfer Overhead:</strong> High latency incurred when copying datasets back and forth between host RAM and device DRAM across the PCIe bus. The PDF recommends minimizing transfers and using asynchronous transfers to overlap transfer with execution.</li>
+      <li><strong>Control Flow & Warp Divergence:</strong> When threads within a single 32-thread warp execute differing conditional branches (<code>if-else</code>), thread paths serialize, reducing throughput.</li>
+      <li><strong>Memory Access Bottlenecks:</strong> Uncoalesced global memory access patterns and shared memory bank conflicts reduce effective memory bandwidth.</li>
+      <li><strong>Resource Contention (Register Pressure):</strong> Over-allocation of registers per thread leads to "register spilling" into slower local memory, lowering SM occupancy.</li>
+    </ul>
+  </div>
+</div>
+</div>
+          `
+        },
+        {
+          id: "u3q5", title: "Q5: CUDA Memory Spaces & Constraints",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 5 · Sessional Paper II <span class="fix-tag">FIXED</span></div>
+  <div class="q-title">Describe the different memory spaces available on a CUDA device and explain their constraints.</div>
+  <div class="q-marks">4M · CO-3,5</div>
+</div>
+
+<h2>1. CUDA Memory Spaces Architecture</h2>
+
+<div class="diagram-box">
+  <div class="diagram-title">CUDA Memory Hierarchy</div>
+  <div class="mem-hierarchy">
+    <div class="mem-block host">
+      <div class="mb-name">HOST (CPU) RAM</div>
+      <div class="mb-desc">Source data resides here; CPU cannot directly read/write device global memory</div>
+    </div>
+    <div class="mem-arrow">↓<span>Explicit transfer via cudaMemcpy() across PCIe bus</span></div>
+    <div class="mem-block device">
+      <div class="mb-name">DEVICE (GPU) MEMORY — Off-Chip DRAM</div>
+      <div class="mem-sub-blocks">
+        <div class="mem-sub"><strong>GLOBAL</strong>Large, Read/Write, High Latency</div>
+        <div class="mem-sub"><strong>CONSTANT</strong>Read-Only, Cached</div>
+        <div class="mem-sub"><strong>TEXTURE</strong>Read-Only, Spatial Cache</div>
+      </div>
+    </div>
+    <div class="mem-arrow">↓<span>On-Chip Access</span></div>
+    <div class="mem-block sm">
+      <div class="mb-name">STREAMING MULTIPROCESSOR (SM) — On-Chip Storage</div>
+      <div class="mem-sub-blocks">
+        <div class="mem-sub"><strong>SHARED</strong>Per-Block, Low Latency</div>
+        <div class="mem-sub"><strong>REGISTERS</strong>Thread-Private, Fastest</div>
+        <div class="mem-sub"><strong>LOCAL</strong>Per-Thread, Off-Chip</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="arch-note">
+  <strong>⚠ Architecture-dependent values:</strong> The exact latencies, capacities and access cycle counts below are <em>typical examples</em> used to illustrate the hierarchy — they are <strong>not universal constants</strong>. Real values vary by GPU generation (Pascal, Volta, Ampere, Hopper, etc.), SKU and clock. Always query <code>cudaGetDeviceProperties()</code> for the actual figures on a given device.
+</div>
+
+<h2>2. Detailed Memory Breakdown & Constraints</h2>
+
+<table>
+  <tr>
+    <th>Memory Type</th>
+    <th>Location</th>
+    <th>Scope & Accessibility</th>
+    <th>Lifetime</th>
+    <th>Access Speed (typical)</th>
+    <th>Hardware Constraints & Limitations</th>
+  </tr>
+  <tr>
+    <td><strong>Registers</strong></td>
+    <td>On-Chip</td>
+    <td>Single Thread (Private)</td>
+    <td>Thread Lifetime</td>
+    <td>Fastest (~1 cycle)</td>
+    <td>Limited per SM (e.g., 64K 32-bit registers on many architectures). Over-allocation forces register spilling.</td>
+  </tr>
+  <tr>
+    <td><strong>Shared Memory</strong></td>
+    <td>On-Chip</td>
+    <td>All Threads in a Block</td>
+    <td>Block Lifetime</td>
+    <td>Very Fast (~1–2 cycles typical)</td>
+    <td>Limited capacity (commonly 48KB–96KB per SM, varies). Subject to shared memory bank conflicts.</td>
+  </tr>
+  <tr>
+    <td><strong>Global Memory</strong></td>
+    <td>Off-Chip (DRAM)</td>
+    <td>All Threads + Host CPU (via explicit copy only)</td>
+    <td>Application Lifetime</td>
+    <td>Slow (hundreds of cycles; exact value architecture-dependent)</td>
+    <td>High access latency. Demands coalesced aligned accesses for efficient bandwidth. <strong>Host does not directly dereference device pointers</strong> — it must use <code>cudaMemcpy</code> or Unified Memory.</td>
+  </tr>
+  <tr>
+    <td><strong>Constant Memory</strong></td>
+    <td>Off-Chip (Cached)</td>
+    <td>All Threads + Host CPU</td>
+    <td>Application Lifetime</td>
+    <td>Fast when cached</td>
+    <td>Limited total size (e.g., 64 KB on many devices). Reads serialize if threads within a warp access different addresses simultaneously.</td>
+  </tr>
+  <tr>
+    <td><strong>Local Memory</strong></td>
+    <td>Off-Chip (DRAM)</td>
+    <td>Single Thread (Private address space)</td>
+    <td>Thread Lifetime</td>
+    <td>Slow (same as global)</td>
+    <td><strong>Per-thread address space</strong> — not exclusively for register spills. The compiler may also place large local arrays, non-inlinable structures, and stack frames here. Register spills are one source of local-memory traffic, not the only one.</td>
+  </tr>
+</table>
+
+<div class="note">
+  <strong>Key Insight:</strong> The hierarchy dictates performance. Effective CUDA programs minimize slow off-chip DRAM traffic by maximizing reuse through on-chip shared memory and registers, while ensuring coalesced global memory accesses. <strong>Host CPU access to device global memory is not direct</strong> — it requires explicit <code>cudaMemcpy</code> (or Unified Memory page migration).
+</div>
+</div>
+          `
+        },
+        {
+          id: "u3q6", title: "Q6: Threads in CUDA Programming",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 6 · Sessional Paper II</div>
+  <div class="q-title">Illustrate the usage of threads in CUDA programming.</div>
+  <div class="q-marks">4M · CO-3,5</div>
+</div>
+
+<h2>1. CUDA Thread Hierarchy Breakdown</h2>
+<p>CUDA uses a 3-tiered hierarchy to map computations to GPU hardware: <strong>Threads</strong>, <strong>Thread Blocks</strong>, and <strong>Grids</strong>.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">CUDA Thread Hierarchy Mapping</div>
+  <div class="thread-grid-vis">
+    <div class="grid-box">
+      <div class="grid-label">GRID (Entire Kernel Execution)</div>
+      <div class="blocks-row">
+        <div class="block-box">
+          <div class="block-label">BLOCK (0,0)</div>
+          <div class="threads-grid">
+            <div class="thread-cell active"></div><div class="thread-cell active"></div><div class="thread-cell"></div><div class="thread-cell"></div>
+            <div class="thread-cell"></div><div class="thread-cell active"></div><div class="thread-cell active"></div><div class="thread-cell"></div>
+            <div class="thread-cell"></div><div class="thread-cell"></div><div class="thread-cell active"></div><div class="thread-cell active"></div>
+            <div class="thread-cell"></div><div class="thread-cell"></div><div class="thread-cell"></div><div class="thread-cell active"></div>
+          </div>
+        </div>
+        <div class="block-box">
+          <div class="block-label">BLOCK (1,0)</div>
+          <div class="threads-grid">
+            <div class="thread-cell active"></div><div class="thread-cell"></div><div class="thread-cell active"></div><div class="thread-cell"></div>
+            <div class="thread-cell"></div><div class="thread-cell active"></div><div class="thread-cell"></div><div class="thread-cell active"></div>
+            <div class="thread-cell active"></div><div class="thread-cell"></div><div class="thread-cell active"></div><div class="thread-cell"></div>
+            <div class="thread-cell"></div><div class="thread-cell active"></div><div class="thread-cell"></div><div class="thread-cell active"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="color:var(--nv-green); font-size:14px;">↓ Hardware Mapping</div>
+    <div style="font-size:12px; color:var(--text-secondary); text-align:center;">
+      Blocks map to <strong style="color:var(--nv-green);">Streaming Multiprocessors (SMs)</strong><br>
+      Threads execute in groups of 32 called <strong style="color:var(--cyan);">WARPS</strong> (SIMT Execution)
+    </div>
+  </div>
+</div>
+
+<h2>2. Thread Indexing Equations</h2>
+<p>When launching a kernel, each thread calculates its unique 1D global index from built-in CUDA variables (<code>blockIdx</code>, <code>blockDim</code>, <code>threadIdx</code>):</p>
+
+<div class="math-block">
+  <span class="var">Global Thread Index</span> (i) = <span class="var">blockIdx.x</span> × <span class="var">blockDim.x</span> + <span class="var">threadIdx.x</span>
+</div>
+
+<p>For a 2D grid (e.g., image processing mapping to <code>(x,y)</code> pixel coordinates):</p>
+
+<div class="math-block">
+  <span class="var">row</span> (y) = <span class="var">blockIdx.y</span> × <span class="var">blockDim.y</span> + <span class="var">threadIdx.y</span><br>
+  <span class="var">col</span> (x) = <span class="var">blockIdx.x</span> × <span class="var">blockDim.x</span> + <span class="var">threadIdx.x</span><br>
+  <span class="var">Linearized Index</span> = y × width + x
+</div>
+
+<h2>3. C++ Code Example: Thread Indexing in Vector Addition</h2>
+
+<div class="code-block">
+  <span class="code-label">vector_add.cu</span>
+  <pre><span class="com">// CUDA Kernel executing on GPU threads</span>
+<span class="kw">__global__</span> <span class="type">void</span> <span class="fn">vectorAddKernel</span>(<span class="kw">const</span> <span class="type">float</span>* A, <span class="kw">const</span> <span class="type">float</span>* B, <span class="type">float</span>* C, <span class="type">int</span> N) {
+    <span class="com">// 1. Calculate unique 1D thread index</span>
+    <span class="type">int</span> i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    <span class="com">// 2. Boundary condition check</span>
+    <span class="kw">if</span> (i &lt; N) {
+        C[i] = A[i] + B[i];
+    }
+}
+
+<span class="type">int</span> <span class="fn">main</span>() {
+    <span class="type">int</span> N = <span class="num">1000000</span>;
+    <span class="type">size_t</span> bytes = N * <span class="kw">sizeof</span>(<span class="type">float</span>);
+
+    <span class="com">// Host &amp; Device pointers</span>
+    <span class="type">float</span> *h_A, *h_B, *h_C;
+    <span class="type">float</span> *d_A, *d_B, *d_C;
+
+    <span class="com">// Allocate Host Memory</span>
+    h_A = (<span class="type">float</span>*)<span class="fn">malloc</span>(bytes);
+    h_B = (<span class="type">float</span>*)<span class="fn">malloc</span>(bytes);
+    h_C = (<span class="type">float</span>*)<span class="fn">malloc</span>(bytes);
+
+    <span class="com">// Allocate Device Memory</span>
+    <span class="fn">cudaMalloc</span>(&amp;d_A, bytes);
+    <span class="fn">cudaMalloc</span>(&amp;d_B, bytes);
+    <span class="fn">cudaMalloc</span>(&amp;d_C, bytes);
+
+    <span class="com">// Copy data from Host to Device</span>
+    <span class="fn">cudaMemcpy</span>(d_A, h_A, bytes, cudaMemcpyHostToDevice);
+    <span class="fn">cudaMemcpy</span>(d_B, h_B, bytes, cudaMemcpyHostToDevice);
+
+    <span class="com">// 3. Thread Configuration: 256 threads per block</span>
+    <span class="type">int</span> threadsPerBlock = <span class="num">256</span>;
+    <span class="type">int</span> blocksPerGrid = (N + threadsPerBlock - <span class="num">1</span>) / threadsPerBlock;
+
+    <span class="com">// Launch Kernel on GPU</span>
+    <span class="fn">vectorAddKernel</span>&lt;&lt;&lt;blocksPerGrid, threadsPerBlock&gt;&gt;&gt;(d_A, d_B, d_C, N);
+
+    <span class="com">// Copy result back to Host</span>
+    <span class="fn">cudaMemcpy</span>(h_C, d_C, bytes, cudaMemcpyDeviceToHost);
+
+    <span class="com">// Free GPU Memory</span>
+    <span class="fn">cudaFree</span>(d_A); <span class="fn">cudaFree</span>(d_B); <span class="fn">cudaFree</span>(d_C);
+    <span class="fn">free</span>(h_A); <span class="fn">free</span>(h_B); <span class="fn">free</span>(h_C);
+
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+</div>
+
+<div class="note">
+  <strong>Key Concept:</strong> Each thread computes its own global index <code>i</code> using the formula, then processes exactly one element. The boundary check <code>if (i &lt; N)</code> prevents out-of-bounds access when N is not perfectly divisible by the block size — the grid is launched with enough threads to cover N, and the extra threads must silently exit.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u3q7", title: "Q7: Self-Tuning Apps & Problem Decomposition",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 7 · Regular Paper</div>
+  <div class="q-title">(a) Explain the concept of a self-tuning CUDA application. (b) Summarize the problem decomposition in CUDA with a suitable example.</div>
+  <div class="q-marks">5M + 5M · CO-2,3</div>
+</div>
+
+<h2>(a) Self-Tuning CUDA Applications [5 Marks]</h2>
+<p><em>Source: Unit III PDF — "Self-tuning Applications" subsection under Optimizing CUDA Applications.</em></p>
+<p>A <strong>Self-Tuning (or Auto-Tuning) CUDA application</strong> dynamically adjusts its configuration and parameters — such as block sizes, grid dimensions, tile sizes, and thread layouts — to maximize performance, efficiency, or other desired metrics without manual intervention. The PDF describes this as adapting application parameters based on the specific GPU architecture, data size, and workload.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Self-Tuning Application Workflow</div>
+  <div class="self-tune-flow">
+    <div class="st-step"><strong>1. Query GPU Properties</strong><br><code>cudaGetDeviceProperties()</code> — read hardware limits at runtime</div>
+    <div class="st-arrow">↓</div>
+    <div class="st-step"><strong>2. Evaluate Workload &amp; Data Size</strong><br>Analyze input dimensions</div>
+    <div class="st-arrow">↓</div>
+    <div class="st-step"><strong>3. Use Occupancy Calculator / Profiler</strong><br>Helps fine-tune parameters for different GPUs</div>
+    <div class="st-arrow">↓</div>
+    <div class="st-step"><strong>4. Compute Optimal Configuration</strong><br>Determine Block Size, Grid Size, Dynamic Shared Memory</div>
+    <div class="st-arrow">↓</div>
+    <div class="st-step"><strong>5. Launch Tuned Kernel Configuration</strong><br><code>kernel&lt;&lt;&lt;grid, block&gt;&gt;&gt;(...)</code></div>
+  </div>
+</div>
+
+<h3>Key Mechanisms (from the PDF)</h3>
+<ul>
+  <li><strong>Device Property Querying:</strong> Uses <code>cudaGetDeviceProperties()</code> to query hardware limits at runtime (e.g., maximum threads per SM, available shared memory, register limits).</li>
+  <li><strong>Occupancy Calculator &amp; Profiler:</strong> The PDF recommends using CUDA's occupancy calculator and occupancy profiler to help fine-tune parameters for different GPUs.</li>
+  <li><strong>Adaptive Parameters:</strong> Adjusts algorithm parameters (such as matrix tile sizes) based on the GPU the application is running on — useful when the same code must run on a low-power embedded GPU and a high-end data center GPU.</li>
+</ul>
+
+<h2>(b) Problem Decomposition in CUDA with Example [5 Marks]</h2>
+<p><em>Source: Unit III PDF — "Problem Decomposition" subsection.</em></p>
+<p><strong>Problem Decomposition</strong> is the process of breaking a computational problem into smaller, independent tasks that can be executed in parallel by GPU threads. The PDF describes a "Divide and Conquer" approach.</p>
+
+<h3>Decomposition Strategy (per the PDF)</h3>
+<ol>
+  <li><strong>Divide and Conquer:</strong> Break the computational problem into smaller, independent tasks that can be executed in parallel. Identify opportunities for parallelism within the algorithm.</li>
+  <li><strong>Work Distribution:</strong> Distribute tasks evenly among GPU threads, ensuring load balance and efficient resource utilization.</li>
+  <li><strong>Divide into Work Units:</strong> Divide the problem into smaller work units that can be executed by individual GPU threads.</li>
+  <li><strong>Thread Blocks and Grids:</strong> Organize these work units into thread blocks and grids. Thread blocks are groups of threads that can communicate and synchronize; grids organize thread blocks for execution. The structure should be designed based on the problem and the available GPU resources.</li>
+</ol>
+
+<h3>Example: 2D Matrix Addition (C = A + B)</h3>
+
+<div class="code-block">
+  <span class="code-label">matrix_add.cu</span>
+  <pre><span class="com">// Decomposing a 2D Matrix Addition problem across a 2D Grid of Thread Blocks</span>
+<span class="kw">__global__</span> <span class="type">void</span> <span class="fn">matrixAddKernel</span>(<span class="type">float</span>* A, <span class="type">float</span>* B, <span class="type">float</span>* C, <span class="type">int</span> width, <span class="type">int</span> height) {
+    <span class="com">// Map thread indices to 2D matrix coordinates</span>
+    <span class="type">int</span> col = blockIdx.x * blockDim.x + threadIdx.x;
+    <span class="type">int</span> row = blockIdx.y * blockDim.y + threadIdx.y;
+
+    <span class="com">// Work unit: Each thread computes exactly one cell, with boundary guard</span>
+    <span class="kw">if</span> (col &lt; width &amp;&amp; row &lt; height) {
+        <span class="type">int</span> index = row * width + col;
+        C[index] = A[index] + B[index];
+    }
+}
+
+<span class="type">void</span> <span class="fn">launchDecomposedKernel</span>(<span class="type">float</span>* d_A, <span class="type">float</span>* d_B, <span class="type">float</span>* d_C, <span class="type">int</span> width, <span class="type">int</span> height) {
+    <span class="com">// Define 2D Block and Grid Dimensions</span>
+    <span class="type">dim3</span> threadsPerBlock(<span class="num">16</span>, <span class="num">16</span>); <span class="com">// 256 threads per block</span>
+    <span class="type">dim3</span> blocksPerGrid((width + <span class="num">15</span>) / <span class="num">16</span>, (height + <span class="num">15</span>) / <span class="num">16</span>);
+
+    <span class="fn">matrixAddKernel</span>&lt;&lt;&lt;blocksPerGrid, threadsPerBlock&gt;&gt;&gt;(d_A, d_B, d_C, width, height);
+}</pre>
+</div>
+
+<div class="note">
+  <strong>Why 2D Decomposition?</strong> For 2D data like images or matrices, a 2D grid of 2D blocks maps naturally to the (x,y) coordinate system, making thread-to-element mapping intuitive and enabling efficient shared memory tiling for neighboring pixel operations.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u3q8", title: "Q8: GPU Execution Model",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 8 · Regular Paper</div>
+  <div class="q-title">Explain the execution model of a GPU with a neat diagram.</div>
+  <div class="q-marks">10M · CO-2,3</div>
+</div>
+
+<h2>1. Comprehensive GPU Execution Model Diagram</h2>
+<p><em>Source: Unit III PDF — "Execution model of GPU" section.</em></p>
+
+<div class="diagram-box">
+  <div class="diagram-title">GPU Execution Model — Host to Device Pipeline</div>
+  <div class="exec-flow">
+    <div class="exec-stage host">
+      <div class="exec-stage-num">1</div>
+      <div class="exec-stage-content">
+        <strong>Memory Allocation and Data Transfer to DRAM by CPU</strong>
+        <div><code>cudaMalloc(&amp;d_in, bytes);</code> then <code>cudaMemcpy(d_in, h_in, bytes, cudaMemcpyHostToDevice);</code> — data copied across PCIe bus</div>
+      </div>
+    </div>
+    <div class="exec-arrow">↓</div>
+    <div class="exec-stage host">
+      <div class="exec-stage-num">2</div>
+      <div class="exec-stage-content">
+        <strong>Kernel Launch</strong>
+        <div>CPU issues non-blocking invocation: <code>kernel&lt;&lt;&lt;Grid, Block&gt;&gt;&gt;(d_in, d_out);</code> specifying thread blocks and threads per block</div>
+      </div>
+    </div>
+    <div class="exec-arrow">↓ Host-to-Device Command Launch</div>
+    <div class="exec-stage device" style="background:var(--nv-green-soft);">
+      <div class="exec-stage-num">▶</div>
+      <div class="exec-stage-content">
+        <strong style="color:var(--nv-green);">GPU Hardware Scheduler</strong>
+        <div>Accepts the kernel launch command and distributes thread blocks across available Streaming Multiprocessors (SMs) based on hardware capacity</div>
+      </div>
+    </div>
+    <div class="exec-arrow">↓</div>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+      <div style="flex:1; min-width:240px;">
+        <div class="sm-card">
+          <div class="sm-card-title">STREAMING MULTIPROCESSOR (SM 0)</div>
+          <div class="sm-card-item">SM manages execution of threads &amp; warps</div>
+          <div class="sm-card-item">Warp Scheduler</div>
+          <div class="sm-card-item">Warp 0: 32 Threads (SIMT)</div>
+          <div class="sm-card-item">Warp 1: 32 Threads (SIMT)</div>
+          <div class="sm-card-item">On-Chip Shared Mem / Registers</div>
+          <div class="sm-card-item">CUDA Cores / ALUs</div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:240px;">
+        <div class="sm-card">
+          <div class="sm-card-title">STREAMING MULTIPROCESSOR (SM 1)</div>
+          <div class="sm-card-item">SM manages execution of threads &amp; warps</div>
+          <div class="sm-card-item">Warp Scheduler</div>
+          <div class="sm-card-item">Warp 0: 32 Threads (SIMT)</div>
+          <div class="sm-card-item">Warp 1: 32 Threads (SIMT)</div>
+          <div class="sm-card-item">On-Chip Shared Mem / Registers</div>
+          <div class="sm-card-item">CUDA Cores / ALUs</div>
+        </div>
+      </div>
+    </div>
+    <div class="exec-arrow">↓ Access</div>
+    <div class="exec-stage device">
+      <div class="exec-stage-num">▣</div>
+      <div class="exec-stage-content">
+        <strong>Device Global Memory (DRAM)</strong>
+        <div>All SMs share access to off-chip GPU memory</div>
+      </div>
+    </div>
+    <div class="exec-arrow">↓ Device-to-Host Result Return</div>
+    <div class="exec-stage host">
+      <div class="exec-stage-num">3</div>
+      <div class="exec-stage-content">
+        <strong>Data Transfer Back to CPU</strong>
+        <div><code>cudaMemcpy(h_out, d_out, bytes, cudaMemcpyDeviceToHost);</code></div>
+      </div>
+    </div>
+    <div class="exec-stage host">
+      <div class="exec-stage-num">4</div>
+      <div class="exec-stage-content">
+        <strong>Free Allocated Memory</strong>
+        <div><code>cudaFree(d_in); cudaFree(d_out);</code></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="arch-note">
+  <strong>On naming:</strong> The PDF refers to the dispatch unit only as "the GPU scheduler" / "GPU hardware scheduler". The trademarked name <em>GigaThread Engine</em> used by NVIDIA marketing for the same dispatch hardware is sometimes used in tutorials; if asked, "GPU hardware scheduler that distributes thread blocks to SMs" is the PDF-safe answer.
+</div>
+
+<h2>2. Detailed Stage-by-Stage Workflow Breakdown</h2>
+
+<h3>Stage 1: Memory Allocation and Data Transfer (CPU Side)</h3>
+<p>Before GPU execution, memory allocation and data transfer are required. The CPU allocates memory in the GPU's DRAM using <code>cudaMalloc()</code>. Data that needs to be processed by the GPU is transferred from the CPU's main memory (RAM) to the GPU's DRAM (device memory) via <code>cudaMemcpy()</code> using the direction flag <code>cudaMemcpyHostToDevice</code>.</p>
+
+<h3>Stage 2: Kernel Launch &amp; Hardware Dispatch</h3>
+<p>The CPU launches a kernel on the GPU, specifying the number of thread blocks and threads per block. These parameters define the total number of threads that will be used to execute the kernel. The kernel is executed concurrently by multiple threads following a data-parallel execution model. The GPU's hardware scheduler accepts the kernel launch command and distributes the workload's thread blocks across available SMs based on hardware capacity.</p>
+
+<h3>Stage 3: Thread Block Allocation &amp; SIMT Warp Execution</h3>
+<ul>
+  <li>Each thread block is assigned to an SM, and the threads within that block are executed in parallel on the SM.</li>
+  <li>The SM manages the execution of threads and warps (groups of 32 threads) within the thread block.</li>
+  <li>Threads within a warp execute the same instruction but can operate on different data elements — taking advantage of SIMD (Single Instruction, Multiple Data) processing. (CUDA calls this <strong>SIMT</strong> — Single Instruction, Multiple Threads.)</li>
+</ul>
+
+<h3>Stage 4: Memory Hierarchy &amp; Barrier Synchronization</h3>
+<p>Threads can access different levels of memory within the GPU: registers (fastest, per-thread), shared memory (shared within a thread block), and global memory (accessible by all threads). Threads within a thread block can be synchronized using barriers (e.g., <code>__syncthreads()</code> in CUDA) to ensure proper coordination and data sharing.</p>
+
+<h3>Stage 5: Thread Completion &amp; Data Transfer Back</h3>
+<p>When all threads within a thread block complete their work, they may be scheduled to execute another kernel if necessary. After kernel execution, the processed data or results are transferred back to the CPU's main memory using <code>cudaMemcpy()</code> with the <code>cudaMemcpyDeviceToHost</code> flag.</p>
+
+<div class="note">
+  <strong>Summary (per PDF):</strong> The execution model is characterized by massive parallelism and the efficient use of threads, with each thread executing the same instruction on different data elements. Memory access and data movement are essential considerations for optimizing GPU performance. Proper synchronization and memory management are crucial for efficient GPU computation.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u3mg", title: "Multi-GPU Solutions [NEW]",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Missing PDF Topic <span class="new-tag">NEW</span></div>
+  <div class="q-title">Using CUDA — Multi-GPU Solutions</div>
+  <div class="q-marks">From Unit III PDF</div>
+</div>
+
+<div class="warn">
+  <strong>Why this section exists:</strong> The Unit III PDF contains a substantial Multi-GPU section that the earlier HTML did not cover. This is the PDF material added back so the guide is complete.
+</div>
+
+<h2>1. Multi-GPU Configurations</h2>
+<p>Using multiple GPUs (Multi-GPU) can significantly boost the computational power of a system for tasks that can be parallelized. CUDA provides support for multi-GPU configurations.</p>
+<ul>
+  <li>Multi-GPU configurations can involve two or more GPUs installed in a single system (desktop or server).</li>
+  <li>GPUs can be identical or a mix of different models, but for optimal performance it is recommended to use GPUs with similar specifications.</li>
+  <li>Use cases include scientific simulations, machine learning, and real-time graphics rendering.</li>
+</ul>
+
+<div class="diagram-box">
+  <div class="diagram-title">Multi-GPU Configuration</div>
+  <div class="multi-gpu-grid">
+    <div class="gpu-card">
+      <div class="gpu-card-title">GPU 0</div>
+      <div class="gpu-card-item">Own DRAM</div>
+      <div class="gpu-card-item">Own SMs</div>
+      <div class="gpu-card-item">Runs kernel chunk 0</div>
+    </div>
+    <div class="p2p-link">⇄ P2P / PCIe ⇄</div>
+    <div class="gpu-card">
+      <div class="gpu-card-title">GPU 1</div>
+      <div class="gpu-card-item">Own DRAM</div>
+      <div class="gpu-card-item">Own SMs</div>
+      <div class="gpu-card-item">Runs kernel chunk 1</div>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:12px; font-size:11px; color:var(--text-tertiary);">Host CPU coordinates via cudaSetDevice(id); P2P access avoids round-trip through host RAM</div>
+</div>
+
+<h2>2. CUDA Multi-GPU Programming Model</h2>
+<ul>
+  <li>CUDA supports multi-GPU programming through a combination of the CUDA API and driver functionality.</li>
+  <li>CUDA code can be designed to run concurrently on multiple GPUs to distribute work across them effectively.</li>
+  <li>To utilize multiple GPUs, you typically launch a CUDA kernel on each GPU, either sequentially or in parallel.</li>
+  <li>Threads within the same block can be distributed across the available GPUs, and each GPU processes a portion of the data.</li>
+  <li>Data is often divided among the GPUs, and each GPU operates on its subset of data independently.</li>
+</ul>
+
+<h2>3. Multi-GPU Programming Techniques</h2>
+<ul>
+  <li><strong>Parallel data partitioning:</strong> Distribute data across GPUs for independent processing.</li>
+  <li><strong>Parallel task decomposition:</strong> Assign distinct tasks or subproblems to each GPU.</li>
+  <li><strong>Data aggregation:</strong> Combine results from multiple GPUs to obtain the final output.</li>
+  <li><strong>Task synchronization:</strong> Use synchronization mechanisms (e.g., barriers) to coordinate work among GPUs.</li>
+</ul>
+
+<h2>4. Inter-GPU Communication</h2>
+<p>Efficient data transfer between GPUs can be a challenge. Inter-GPU communication can be facilitated using <strong>peer-to-peer (P2P) memory access</strong>, which allows GPUs to share data directly without involving the CPU. Without P2P, data moving from GPU 0 to GPU 1 must round-trip through host RAM, doubling latency.</p>
+
+<h2>5. Considerations</h2>
+<ul>
+  <li><strong>Load Balancing:</strong> Ensuring that the work is evenly distributed among GPUs is critical for achieving optimal performance.</li>
+  <li><strong>Scalability:</strong> Adding more GPUs may not necessarily result in linear performance improvement.</li>
+  <li><strong>Error Handling:</strong> Implement robust error handling and recovery mechanisms to account for potential failures of individual GPUs.</li>
+  <li><strong>Synchronization and Data Aggregation:</strong> After each GPU completes its work, synchronization and data aggregation steps may be needed to combine the results from all GPUs.</li>
+</ul>
+
+<div class="note">
+  <strong>Bottom line (per PDF):</strong> Multi-GPU solutions can significantly accelerate computations, but they require careful design, optimization, and consideration of the specific requirements of the application. The choice of multi-GPU technology, programming model, and techniques depends on the use case and the number of GPUs in the system.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u3opt", title: "CUDA Optimization Topics",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Reference Summary</div>
+  <div class="q-title">Optimizing CUDA Applications — Memory, Transfers, Thread Usage, Resource Contentions</div>
+  <div class="q-marks">From Unit III PDF</div>
+</div>
+
+<p><em>This is condensed PDF content covering the optimization subsections that complement Q5–Q8 above.</em></p>
+
+<h2>Memory Considerations</h2>
+<ul>
+  <li><strong>Memory Hierarchy:</strong> Registers (fastest, private), shared memory (fast, per-block), local memory (fallback), global memory (largest, off-chip, highest latency).</li>
+  <li><strong>Register Usage:</strong> Too many registers per thread leads to <em>register spilling</em> into local memory, degrading performance. Minimize via type optimization, loop unrolling, and inlining.</li>
+  <li><strong>Shared Memory:</strong> Faster than global but limited. Optimize access patterns to minimize <em>bank conflicts</em>. Use it for caching frequently accessed data.</li>
+  <li><strong>Local Memory:</strong> A fallback for variables that don't fit in registers or shared memory. Slower than shared memory. Minimize its use.</li>
+  <li><strong>Global Memory Access:</strong> Accesses should be <em>coalesced</em> — adjacent threads access adjacent memory locations.</li>
+  <li><strong>Memory Padding:</strong> Align data structures to cache line size to improve access efficiency.</li>
+  <li><strong>Memory Copy Optimization:</strong> Use asynchronous copies to overlap transfer with computation. Use pinned memory to reduce transfer overhead.</li>
+  <li><strong>Constant &amp; Texture Memory:</strong> Use for read-only frequently-accessed data; cached and optimized for specific patterns.</li>
+</ul>
+
+<h2>Data Transfers</h2>
+<ul>
+  <li><strong>Minimize Data Transfer:</strong> Reduce unnecessary transfers between CPU and GPU.</li>
+  <li><strong>Asynchronous Transfers:</strong> Use async transfers to overlap data transfer and kernel execution.</li>
+</ul>
+
+<h2>Thread Usage</h2>
+<ul>
+  <li><strong>Thread Granularity:</strong> Choose appropriate block size. Smaller blocks can maximize occupancy for some workloads.</li>
+  <li><strong>Warp-level Optimization:</strong> Avoid warp divergence — minimize branching within warps.</li>
+  <li><strong>Thread Synchronization:</strong> Use <code>__syncthreads()</code> judiciously; excessive synchronization impacts performance.</li>
+</ul>
+
+<h2>Resource Contentions</h2>
+<ul>
+  <li><strong>Register Pressure:</strong> Exceeding available registers causes spilling to global memory.</li>
+  <li><strong>Shared Memory Bank Conflicts:</strong> Minimize by accessing shared memory with coalesced patterns.</li>
+</ul>
+
+<h3>Mitigation Strategies (from the Resource Contentions subsection)</h3>
+<ul>
+  <li><strong>Fine-Grained Locking:</strong> Split large critical sections into smaller independently-accessed sections.</li>
+  <li><strong>Lock-Free / Wait-Free Data Structures:</strong> e.g., lock-free queues and stacks.</li>
+  <li><strong>Thread Pooling:</strong> Control the number of concurrent threads to prevent CPU/context-switch contention.</li>
+  <li><strong>Memory Locality:</strong> Allocate data in a cache-friendly manner; use padding to reduce cache thrashing.</li>
+  <li><strong>Asynchronous I/O:</strong> Mitigate I/O contention by allowing threads to continue processing while waiting on I/O.</li>
+  <li><strong>Resource Allocation &amp; Scheduling:</strong> Allocate resources based on priorities or usage patterns.</li>
+  <li><strong>Parallel Algorithms:</strong> Use efficient data partitioning and divide-and-conquer.</li>
+</ul>
+
+<h2>Kernel Launch Configuration</h2>
+<ul>
+  <li><strong>Grid and Block Size:</strong> Choose optimal grid/block size for the specific GPU; experiment to find the best performance.</li>
+  <li><strong>Dynamic Parallelism:</strong> Consider nested kernels for finer-grained parallelism if the architecture supports it.</li>
+</ul>
+
+<h2>Debugging and Profiling</h2>
+<ul>
+  <li>Use GPU debugging and profiling tools to identify bottlenecks.</li>
+  <li>Tools: <strong>NVIDIA Nsight Systems</strong>, <strong>NVIDIA Visual Profiler</strong>.</li>
+  <li>Strive to maintain high GPU occupancy by balancing active warps against available resources.</li>
+</ul>
+
+<div class="note">
+  <strong>Iterative process (per PDF):</strong> Optimizing CUDA applications is an iterative process involving careful consideration of the specific GPU architecture, the nature of the workload, and performance metrics. The most effective optimizations vary depending on the application, so tailor your approach to the specific use case.
+</div>
+</div>
+          `
+        }
+      ]
+    },
+    {
+      id: "u4", title: "Unit IV: CUDA Programming Issues",
+      sections: [
+        {
+          id: "u4pa", title: "Part-A: 2-Mark Questions",
+          content: `
+<div class="unit-heading">Unit IV: CUDA Programming Issues</div>
+<div class="unit-sub">Part-A — 2-Mark Quick Revision</div>
+
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Part-A · 2 Marks Each</div>
+  <div class="q-title">Short Answer Questions</div>
+  <div class="q-marks">2M × 2 = 4 Marks</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q1: Classify different types of errors in CUDA. <span class="fix-tag">FIXED</span></div>
+  <div class="qa-a">
+    <p><em>Corrected to match the 5 categories listed in the Unit IV PDF (which is printed as "UNIT-III: CUDA PROGRAMMING ISSUES").</em></p>
+    <p>The PDF classifies CUDA errors into five categories:</p>
+    <ol>
+      <li><strong>Kernel Launch Failures:</strong> Occur when launching a GPU kernel with incorrect configurations, such as an invalid grid size or block size that exceeds hardware limits.</li>
+      <li><strong>Memory Management Errors:</strong> Issues with memory allocation, deallocation, or access in device memory (e.g., <code>cudaMalloc</code> failure, out-of-bounds access, use-after-free).</li>
+      <li><strong>Synchronization Errors:</strong> Happen when threads within a block or grid need to synchronize their execution — missing <code>__syncthreads()</code>, race conditions on shared data.</li>
+      <li><strong>Driver Errors:</strong> Related to outdated or incompatible GPU drivers, or mismatched CUDA toolkit vs driver versions.</li>
+      <li><strong>API Call Errors:</strong> Problems with CUDA API function calls — invalid arguments, invalid device pointers, missing context.</li>
+    </ol>
+    <p><strong>To handle these:</strong> Carefully check error codes returned by CUDA functions and use CUDA's error-checking mechanisms (<code>cudaGetLastError</code>, <code>cudaDeviceSynchronize</code>, <code>cudaPeekAtLastError</code>).</p>
+  </div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q2: Define PTX (Parallel Thread Execution) and explain its primary purpose.</div>
+  <div class="qa-a">
+    <p><strong>Definition:</strong> PTX is an architecture-independent virtual machine and instruction set architecture (ISA) generated by the NVCC compiler as an intermediate representation.</p>
+    <p><strong>Primary Purpose:</strong> It abstracts low-level hardware specifications so that CUDA source code can be ported across different GPU generations. PTX is translated into native device machine code (SASS) by the GPU's Just-In-Time (JIT) compiler at runtime. This enables a single PTX binary to run on multiple GPU architectures without recompilation.</p>
+  </div>
+</div>
+</div>
+          `
+        },
+        {
+          id: "u4q3", title: "Q3: Parallel Issues & CUDA Errors [FIXED]",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 3 · Sessional Paper II <span class="fix-tag">FIXED</span></div>
+  <div class="q-title">(a) Analyze common issues encountered in parallel programming. (b) Summarize the types of errors in CUDA programming.</div>
+  <div class="q-marks">4M + 4M · CO-3,4,5</div>
+</div>
+
+<h2>(a) Common Issues in Parallel Programming [4 Marks]</h2>
+<p><em>Source: Unit IV PDF — "Parallel Programming Issues" section.</em></p>
+
+<div class="compare-grid">
+  <div class="compare-card">
+    <h4>Data Races</h4>
+    <p style="font-size:13px;">Occur when multiple threads access and modify shared data simultaneously, leading to unpredictable results.</p>
+  </div>
+  <div class="compare-card">
+    <h4>Deadlocks</h4>
+    <p style="font-size:13px;">A situation where two or more threads are unable to proceed because each is waiting for the other to release a resource.</p>
+  </div>
+  <div class="compare-card">
+    <h4>Load Balancing</h4>
+    <p style="font-size:13px;">Unequal distribution of computational work among threads, leading to some threads being underutilized while others are overloaded.</p>
+  </div>
+  <div class="compare-card">
+    <h4>Thread Synchronization</h4>
+    <p style="font-size:13px;">Ensuring proper coordination between threads to avoid race conditions and ensure the correct order of execution.</p>
+  </div>
+  <div class="compare-card">
+    <h4>Scalability</h4>
+    <p style="font-size:13px;">Ensuring that the parallel program performs well as the number of cores or threads increases.</p>
+  </div>
+  <div class="compare-card">
+    <h4>False Sharing</h4>
+    <p style="font-size:13px;">Two threads update separate elements that share the same cache line, causing cache invalidations and unnecessary memory traffic.</p>
+  </div>
+</div>
+
+<h2>(b) Types of Errors in CUDA Programming [4 Marks] <span class="fix-tag">FIXED</span></h2>
+
+<div class="warn">
+  <strong>Correction:</strong> The earlier HTML listed "register spilling" and "warp divergence" as CUDA error categories. Those are <em>performance issues</em>, not runtime error categories. "API return-checking failure" is a programming mistake, not an error class. The PDF lists exactly five categories, which are used below.
+</div>
+
+<p><em>Source: Unit IV PDF — "CUDA Error Handling" subsection.</em></p>
+
+<table>
+  <tr><th>Error Category</th><th>Description</th><th>Example</th></tr>
+  <tr>
+    <td><strong>1. Kernel Launch Failures</strong></td>
+    <td>Occur when launching a GPU kernel with incorrect configurations, such as an invalid grid size or block size that exceeds hardware limits.</td>
+    <td>Launching 2048 threads per block on a device whose max is 1024.</td>
+  </tr>
+  <tr>
+    <td><strong>2. Memory Management Errors</strong></td>
+    <td>Issues with memory allocation, deallocation, or access in device memory.</td>
+    <td>Out-of-bounds write, use after <code>cudaFree</code>, <code>cudaMalloc</code> returning out-of-memory.</td>
+  </tr>
+  <tr>
+    <td><strong>3. Synchronization Errors</strong></td>
+    <td>Happen when threads within a block or grid need to synchronize their execution.</td>
+    <td>Missing <code>__syncthreads()</code> before reading shared memory written by other threads → data race.</td>
+  </tr>
+  <tr>
+    <td><strong>4. Driver Errors</strong></td>
+    <td>Related to outdated or incompatible GPU drivers.</td>
+    <td>CUDA toolkit 12.x runtime against a driver that only supports 11.x.</td>
+  </tr>
+  <tr>
+    <td><strong>5. API Call Errors</strong></td>
+    <td>Problems with CUDA API function calls.</td>
+    <td>Passing a host pointer to <code>cudaMemcpy</code> that expects a device pointer; invalid <code>cudaMemcpyKind</code>.</td>
+  </tr>
+</table>
+
+<div class="note">
+  <strong>Handling strategy (per PDF):</strong> Carefully check error codes returned by CUDA functions and use CUDA's error-checking mechanisms. The five error classes above are the canonical answer for the exam.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u4q4", title: "Q4: Finding & Avoiding Errors",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 4 · Sessional Paper II</div>
+  <div class="q-title">Demonstrate how to find and avoid errors in CUDA programs.</div>
+  <div class="q-marks">8M · CO-3,4</div>
+</div>
+
+<h2>1. Strategies for Finding Errors</h2>
+<p><em>Source: Unit IV PDF — "Finding and Avoiding Errors" section.</em></p>
+
+<h3>Error Checking Macros</h3>
+<p>The PDF recommends checking for errors after each CUDA API call using <code>cudaGetLastError()</code>, <code>cudaDeviceSynchronize()</code>, or <code>cudaPeekAtLastError()</code>. A common pattern is a wrapper macro:</p>
+
+<div class="code-block">
+  <span class="code-label">error_check.cu</span>
+  <pre><span class="macro">#define</span> <span class="fn">CUDA_CHECK_ERROR</span>(err) <span class="fn">__cudaCheckError</span>(err, __FILE__, __LINE__)
+
+<span class="kw">inline</span> <span class="type">void</span> <span class="fn">__cudaCheckError</span>(<span class="type">cudaError_t</span> err, <span class="kw">const</span> <span class="type">char</span>* file, <span class="type">int</span> line) {
+    <span class="kw">if</span> (err != cudaSuccess) {
+        <span class="fn">printf</span>(<span class="str">"CUDA error at %s:%d: %s\n"</span>, file, line, <span class="fn">cudaGetErrorString</span>(err));
+        <span class="fn">exit</span>(EXIT_FAILURE);
+    }
+}</pre>
+</div>
+
+<h3>Asynchronous Error Checking</h3>
+<p>Because most GPU operations are asynchronous, errors surface later. The PDF recommends <code>cudaPeekAtLastError()</code> to inspect the launch error without clearing, and <code>cudaDeviceSynchronize()</code> to wait for completion and surface runtime errors.</p>
+
+<h3>Error Checking in CUDA Streams</h3>
+<p>Each stream has its own error status; use <code>cudaStreamQuery()</code> to check for errors in a specific stream.</p>
+
+<h3>Debugging Tools</h3>
+<ul>
+  <li><strong>CUDA-GDB</strong> — CUDA-enabled version of the GNU Debugger.</li>
+  <li><strong>NVIDIA Nsight Systems / Nsight Compute</strong> — profiling and debugging.</li>
+</ul>
+
+<h3>Other Strategies from the PDF</h3>
+<ul>
+  <li><strong>Thorough Testing:</strong> Comprehensive test cases on different parallel configurations.</li>
+  <li><strong>Code Reviews:</strong> Peer review to catch logical errors.</li>
+  <li><strong>Static Code Analysis:</strong> Identify race conditions before execution.</li>
+</ul>
+
+<h2>2. Best Practices for Avoiding Errors</h2>
+
+<table>
+  <tr><th>Practice</th><th>Implementation</th></tr>
+  <tr>
+    <td><strong>Proper Memory Management</strong></td>
+    <td>Allocate with <code>cudaMalloc</code>, free with <code>cudaFree</code>. Avoid dangling pointers. Don't access freed memory.</td>
+  </tr>
+  <tr>
+    <td><strong>Proper Synchronization</strong></td>
+    <td>Use <code>cudaDeviceSynchronize()</code> and <code>__syncthreads()</code> appropriately. Incorrect sync causes race conditions.</td>
+  </tr>
+  <tr>
+    <td><strong>Check Kernel Launch Parameters</strong></td>
+    <td>Verify grid/block dimensions don't exceed hardware limits.</td>
+  </tr>
+  <tr>
+    <td><strong>Avoid Integer Overflow</strong></td>
+    <td>Use sufficiently large integer types for indices and ranges.</td>
+  </tr>
+  <tr>
+    <td><strong>Handle Asynchronous Operations</strong></td>
+    <td>Be aware of async nature; sync between host and device when needed.</td>
+  </tr>
+  <tr>
+    <td><strong>Avoid Shared Memory Race Conditions</strong></td>
+    <td>Properly synchronize threads accessing shared memory.</td>
+  </tr>
+  <tr>
+    <td><strong>Use Constant Memory</strong></td>
+    <td><code>__constant__</code> for read-only data to optimize access and avoid corruption.</td>
+  </tr>
+  <tr>
+    <td><strong>Use Volatile Qualifier</strong></td>
+    <td>For variables modifiable by hardware (memory-mapped I/O) to prevent unsafe compiler optimizations.</td>
+  </tr>
+  <tr>
+    <td><strong>Code Reviews &amp; Unit Testing</strong></td>
+    <td>Catch potential errors and verify component correctness.</td>
+  </tr>
+  <tr>
+    <td><strong>Avoid Dynamic Parallelism (when unnecessary)</strong></td>
+    <td>CDP introduces additional complexity and potential issues; use judiciously.</td>
+  </tr>
+</table>
+
+<div class="note">
+  <strong>PDF summary:</strong> By applying these practices, you can reduce the likelihood of errors and ensure that your CUDA applications are reliable, efficient, and robust.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u4q7", title: "Q7: Resource Contention & Algorithmic Issues",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 7 · Regular Paper</div>
+  <div class="q-title">(a) What are resource contention issues and how to avoid them? (b) Discuss algorithmic issues in parallel programming.</div>
+  <div class="q-marks">5M + 5M · CO-3,4</div>
+</div>
+
+<h2>(a) Resource Contention Issues &amp; Mitigation [5 Marks]</h2>
+<p><em>Source: Unit III PDF "Resource Contentions" + Unit IV PDF parallel programming issues.</em></p>
+<p><strong>Definition:</strong> Resource contention occurs when multiple threads or processes compete for access to a shared resource — memory, CPU cores, hardware devices, or synchronization primitives — leading to performance degradation, synchronization issues, and bottlenecks.</p>
+
+<h3>Types of Resource Contention</h3>
+<ul>
+  <li><strong>Memory Contention:</strong> Multiple threads compete for memory access → cache thrashing, inefficient bandwidth use.</li>
+  <li><strong>CPU Contention:</strong> Threads compete for CPU cores → thread queuing, execution delays.</li>
+  <li><strong>I/O Contention:</strong> Threads contend for disks or network interfaces.</li>
+  <li><strong>Synchronization Contention:</strong> Threads contend for locks or semaphores → deadlocks or excessive waiting.</li>
+</ul>
+
+<h3>GPU-Specific Contention (from Unit III PDF)</h3>
+<table>
+  <tr><th>Contention Type</th><th>Cause</th><th>Mitigation</th></tr>
+  <tr>
+    <td><strong>Register Pressure</strong></td>
+    <td>Exceeding per-thread register limits</td>
+    <td>Spilling to local memory; optimize variable scopes, tune block size</td>
+  </tr>
+  <tr>
+    <td><strong>Shared Memory Bank Conflicts</strong></td>
+    <td>Multiple threads in a warp access different words in the same bank</td>
+    <td>Padding data structures; altering access strides</td>
+  </tr>
+  <tr>
+    <td><strong>Global Memory Bandwidth</strong></td>
+    <td>Multiple warps saturate DRAM bus</td>
+    <td>Coalesced accesses; reuse data in shared memory</td>
+  </tr>
+</table>
+
+<h3>General Mitigation Strategies (from PDF)</h3>
+<ul>
+  <li><strong>Fine-Grained Locking:</strong> Split a large critical section into smaller independent sections.</li>
+  <li><strong>Lock-Free / Wait-Free Data Structures:</strong> Lock-free queues and stacks reduce sync overhead.</li>
+  <li><strong>Thread Pooling:</strong> Control concurrent thread count to prevent CPU/context-switch contention.</li>
+  <li><strong>Memory Locality:</strong> Cache-friendly allocation; padding to reduce thrashing.</li>
+  <li><strong>Asynchronous I/O:</strong> Overlap I/O with computation.</li>
+  <li><strong>Resource Allocation &amp; Scheduling:</strong> Allocate based on priorities/usage.</li>
+  <li><strong>Parallel Algorithms:</strong> Divide-and-conquer with efficient partitioning.</li>
+</ul>
+
+<h2>(b) Algorithmic Issues in Parallel Programming [5 Marks]</h2>
+<p><em>Source: Unit IV PDF — "Algorithmic Issues" section.</em></p>
+
+<ul>
+  <li><strong>Load Imbalance:</strong> Computational work is not evenly distributed. Some threads finish much earlier than others → underutilized resources. <em>Example: parallel loop where one thread processes significantly more elements.</em></li>
+  <li><strong>Scalability Limitations:</strong> Some algorithms don't scale efficiently with increasing processing units. <em>Example: high inter-thread communication overhead; algorithms relying on global synchronization don't scale with more GPUs.</em></li>
+  <li><strong>Memory Access Patterns:</strong> Inefficient patterns cause cache misses and memory contention. <em>Example: matrix multiplication with non-coalesced CUDA accesses.</em></li>
+  <li><strong>Communication Overhead:</strong> Frequent data exchange between threads/processes becomes a bottleneck. <em>Example: excessive message passing in distributed systems; frequent host↔device transfers.</em></li>
+  <li><strong>Task Granularity:</strong> Choosing appropriate task size. Too fine → overhead outweighs benefit. Too coarse → load imbalance.</li>
+  <li><strong>Amdahl's Law Limitations:</strong> Speedup is bounded by the serial (non-parallelizable) fraction of the algorithm.</li>
+  <li><strong>Data Dependencies:</strong> Iterative algorithms where each iteration depends on the previous limit parallelism.</li>
+</ul>
+
+<div class="math-block">
+  <span class="var">Amdahl's Law:</span> Speedup = <span class="num">1</span> / [(<span class="num">1</span> - P) + P/N]<br>
+  <span style="font-size:11px; color:var(--text-tertiary);">where P = parallel fraction, N = number of processors</span>
+</div>
+
+<div class="note">
+  <strong>Resolution (per PDF):</strong> Addressing algorithmic issues requires careful algorithm design, load balancing techniques, minimizing communication overhead, optimizing memory access patterns, and considering scalability. Parallel algorithms need to be analyzed, profiled, and optimized.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u4q8", title: "Q8: CUDA Error Handling [FIXED]",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 8 · Regular Paper <span class="fix-tag">FIXED</span></div>
+  <div class="q-title">Explain the importance of CUDA error handling with examples.</div>
+  <div class="q-marks">10M · CO-3,4</div>
+</div>
+
+<h2>1. Why CUDA Error Handling is Critical</h2>
+<p><em>Source: Unit IV PDF — "CUDA Error Handling" section.</em></p>
+<p>Unlike traditional CPU programming where runtime failures often throw exceptions or terminate threads immediately, GPU executions operate asynchronously across independent hardware queues. Without structured error handling:</p>
+<ul>
+  <li>Invalid memory accesses or failed kernel configurations fail silently or crash application drivers unpredictably.</li>
+  <li>Debugging memory corruption or synchronization faults becomes extremely difficult without catching error codes at their source.</li>
+</ul>
+
+<div class="warn">
+  <strong>Correction:</strong> The earlier HTML used <code>d_out[idx] = 100.0f / (float)idx;</code> as a "CUDA error" demonstration. That is <em>not</em> a CUDA runtime error — IEEE-754 float division by zero produces <code>Inf</code>, not a synchronous GPU fault. The example below uses a <strong>genuine out-of-bounds device-memory access</strong>, which triggers a real recoverable CUDA error (<code>cudaErrorIllegalAddress</code>) on <code>cudaDeviceSynchronize()</code>.
+</div>
+
+<h2>2. Comprehensive CUDA Error Handling Code Example</h2>
+
+<div class="code-block">
+  <span class="code-label">error_handling.cu</span>
+  <pre><span class="macro">#include</span> <span class="str">&lt;stdio.h&gt;</span>
+<span class="macro">#include</span> <span class="str">&lt;cuda_runtime.h&gt;</span>
+
+<span class="com">// Helper error checking macro</span>
+<span class="macro">#define</span> <span class="fn">CUDA_CHECK</span>(ans) { <span class="fn">gpuAssert</span>((ans), __FILE__, __LINE__); }
+<span class="kw">inline</span> <span class="type">void</span> <span class="fn">gpuAssert</span>(<span class="type">cudaError_t</span> code, <span class="kw">const</span> <span class="type">char</span> *file, <span class="type">int</span> line, <span class="type">bool</span> abort=<span class="kw">true</span>) {
+    <span class="kw">if</span> (code != cudaSuccess) {
+        <span class="fn">fprintf</span>(stderr, <span class="str">"CUDA_CHECK failed: %s %s %d\n"</span>, <span class="fn">cudaGetErrorString</span>(code), file, line);
+        <span class="kw">if</span> (abort) <span class="fn">exit</span>(code);
+    }
+}
+
+<span class="com">// Kernel that deliberately performs an out-of-bounds write.</span>
+<span class="com">// The bad write only happens for thread idx == 0; this is a genuine</span>
+<span class="com">// illegal-address access that the GPU reports as cudaErrorIllegalAddress.</span>
+<span class="kw">__global__</span> <span class="type">void</span> <span class="fn">faultyKernel</span>(<span class="type">float</span> *d_out, <span class="type">int</span> N) {
+    <span class="type">int</span> idx = blockIdx.x * blockDim.x + threadIdx.x;
+    <span class="kw">if</span> (idx == <span class="num">0</span>) {
+        <span class="com">// Deliberately write beyond the allocated buffer.</span>
+        <span class="com">// This triggers an asynchronous illegal-address error.</span>
+        d_out[N + <span class="num">1000</span>] = <span class="num">42.0f</span>;
+    }
+}
+
+<span class="type">int</span> <span class="fn">main</span>() {
+    <span class="type">int</span> N = <span class="num">1024</span>;
+    <span class="type">size_t</span> size = N * <span class="kw">sizeof</span>(<span class="type">float</span>);
+    <span class="type">float</span> *d_out = <span class="kw">NULL</span>;
+
+    <span class="com">// 1. Checking API Call Errors (cudaMalloc)</span>
+    <span class="type">cudaError_t</span> err = <span class="fn">cudaMalloc</span>((<span class="type">void</span>**)&amp;d_out, size);
+    <span class="kw">if</span> (err != cudaSuccess) {
+        <span class="fn">printf</span>(<span class="str">"Device memory allocation failed: %s\n"</span>, <span class="fn">cudaGetErrorString</span>(err));
+        <span class="kw">return</span> -<span class="num">1</span>;
+    }
+    <span class="fn">CUDA_CHECK</span>(<span class="fn">cudaMemset</span>(d_out, <span class="num">0</span>, size));
+
+    <span class="com">// 2. Launching Kernel Asynchronously</span>
+    <span class="type">int</span> threadsPerBlock = <span class="num">256</span>;
+    <span class="type">int</span> blocksPerGrid = (N + threadsPerBlock - <span class="num">1</span>) / threadsPerBlock;
+
+    <span class="fn">faultyKernel</span>&lt;&lt;&lt;blocksPerGrid, threadsPerBlock&gt;&gt;&gt;(d_out, N);
+
+    <span class="com">// 3. Catching Kernel Launch Errors immediately after launch</span>
+    <span class="type">cudaError_t</span> launchErr = <span class="fn">cudaGetLastError</span>();
+    <span class="kw">if</span> (launchErr != cudaSuccess) {
+        <span class="fn">printf</span>(<span class="str">"Kernel launch error detected: %s\n"</span>, <span class="fn">cudaGetErrorString</span>(launchErr));
+    }
+
+    <span class="com">// 4. Catching Asynchronous Execution Errors via Synchronization.</span>
+    <span class="com">//    The illegal-address fault above is reported here.</span>
+    <span class="type">cudaError_t</span> syncErr = <span class="fn">cudaDeviceSynchronize</span>();
+    <span class="kw">if</span> (syncErr != cudaSuccess) {
+        <span class="fn">printf</span>(<span class="str">"Asynchronous execution error detected post-sync: %s\n"</span>, <span class="fn">cudaGetErrorString</span>(syncErr));
+    }
+
+    <span class="com">// Cleanup</span>
+    <span class="fn">CUDA_CHECK</span>(<span class="fn">cudaFree</span>(d_out));
+    <span class="fn">printf</span>(<span class="str">"CUDA program executed and error checked.\n"</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+</div>
+
+<h2>3. Summary of Key Error APIs Used</h2>
+
+<table>
+  <tr><th>API Function</th><th>Purpose</th></tr>
+  <tr>
+    <td><code>cudaGetLastError()</code></td>
+    <td>Returns the latest error code logged by the runtime for the current thread, <strong>clearing</strong> the status.</td>
+  </tr>
+  <tr>
+    <td><code>cudaPeekAtLastError()</code></td>
+    <td>Inspects the error register <strong>without clearing</strong> it.</td>
+  </tr>
+  <tr>
+    <td><code>cudaDeviceSynchronize()</code></td>
+    <td>Forces host-device synchronization; waits for all prior kernel queues to finish and reports any underlying execution faults.</td>
+  </tr>
+  <tr>
+    <td><code>cudaStreamQuery()</code></td>
+    <td>For stream-scoped error checking — returns <code>cudaSuccess</code> only if all operations in the stream completed successfully.</td>
+  </tr>
+  <tr>
+    <td><code>cudaGetErrorString()</code></td>
+    <td>Converts an error code into a human-readable string for logging.</td>
+  </tr>
+</table>
+
+<div class="warn">
+  <strong>Critical Pattern:</strong> Always use the two-step error check after every kernel launch: (1) <code>cudaGetLastError()</code> catches configuration/launch errors immediately, then (2) <code>cudaDeviceSynchronize()</code> catches asynchronous runtime errors that occurred during actual GPU execution. Without step 2, illegal-address faults and similar async errors are silently lost.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u4nvcc", title: "NVCC Compilation & Compatibility [NEW]",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Missing PDF Topic <span class="new-tag">NEW</span></div>
+  <div class="q-title">Compilation with NVCC, PTX &amp; Binary Compatibility</div>
+  <div class="q-marks">From Unit IV PDF</div>
+</div>
+
+<div class="warn">
+  <strong>Why this section exists:</strong> The Unit IV PDF contains a substantial NVCC compilation and compatibility section that the earlier HTML did not cover. This is the PDF material added back.
+</div>
+
+<h2>1. NVCC Compilation Workflow</h2>
+<p>NVCC (NVIDIA CUDA Compiler) is the specialized compiler that translates CUDA code into machine code executable on NVIDIA GPUs. The workflow:</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">NVCC Compilation Workflow</div>
+  <div class="nvcc-flow">
+    <div class="nvcc-stage host"><strong>1. .cu Source File</strong><br>Contains both host C/C++ and device CUDA kernels</div>
+    <div class="nvcc-arrow">↓</div>
+    <div class="nvcc-stage"><strong>2. Preprocessing</strong><br>Macro expansion, includes</div>
+    <div class="nvcc-arrow">↓</div>
+    <div class="nvcc-stage host"><strong>3. Host Code Compilation</strong><br>Compiled by host C/C++ compiler (GCC/MSVC) → host object files</div>
+    <div class="nvcc-arrow">↓</div>
+    <div class="nvcc-stage device"><strong>4. Device Code → PTX</strong><br>Compiled into PTX (Parallel Thread Execution) intermediate representation</div>
+    <div class="nvcc-arrow">↓</div>
+    <div class="nvcc-stage device"><strong>5. PTX → SASS (JIT at runtime)</strong><br>Just-In-Time compilation by GPU driver into native machine code (SASS)</div>
+    <div class="nvcc-arrow">↓</div>
+    <div class="nvcc-stage"><strong>6. Linking</strong><br>Host object files + device code + CUDA runtime libraries → final executable</div>
+  </div>
+</div>
+
+<h3>Compilation Command</h3>
+<div class="code-block">
+<pre>nvcc -o my_cuda_program my_cuda_code.cu</pre>
+</div>
+
+<h3>Common NVCC Options</h3>
+<ul>
+  <li><code>-arch=sm_XX</code>: Specifies compute capability (e.g., <code>-arch=sm_61</code> for Pascal 6.1).</li>
+  <li><code>-Xcompiler</code>: Passes options to the underlying host compiler (e.g., <code>-Xcompiler -std=c++17</code>).</li>
+  <li><code>-rdc</code>: Enables relocatable device code for separate compilation units.</li>
+  <li><code>-L</code> / <code>-l</code>: Library paths and library names for external dependencies.</li>
+</ul>
+
+<h2>2. PTX (Parallel Thread Execution)</h2>
+<ul>
+  <li>PTX is an <strong>architecture-independent</strong> intermediate representation.</li>
+  <li>Serves as an abstraction layer between high-level CUDA source and low-level GPU-specific machine code (SASS).</li>
+  <li>At runtime, PTX is JIT-compiled into SASS by the GPU driver, optimized for the specific GPU's architecture.</li>
+</ul>
+
+<h2>3. Binary Compatibility</h2>
+<ul>
+  <li>PTX code can execute on any GPU with <strong>compute capability ≥</strong> the one targeted during PTX generation.</li>
+  <li>PTX generated for sm_61 runs on sm_61, sm_70, sm_80, etc. — but is <strong>not guaranteed</strong> to run on lower compute capabilities.</li>
+  <li><strong>Dynamic Parallelism (CDP)</strong> can introduce subtle incompatibilities because inner kernels are compiled at runtime; disable CDP when broad compatibility is required.</li>
+  <li>GPU feature variations (atomic operations, memory instructions) may exist between architectures — functional differences are possible.</li>
+</ul>
+
+<h2>4. PTX Compatibility</h2>
+<ul>
+  <li>PTX is designed to be compatible across NVIDIA GPUs with compatible compute capabilities.</li>
+  <li>A single binary can be distributed and executed on different NVIDIA GPUs <strong>without recompilation</strong>, as long as compute capability is sufficient.</li>
+  <li>JIT compilation tailors PTX to the specific GPU's architecture.</li>
+</ul>
+
+<h2>5. Application Compatibility</h2>
+<ul>
+  <li><strong>Compute Capability Targeting:</strong> Target lower CC for broader compatibility; target higher CC for newer features.</li>
+  <li><strong>PTX + JIT Compilation:</strong> Distribute precompiled binaries that execute on various GPUs via JIT.</li>
+  <li><strong>Memory &amp; Resource Management:</strong> Avoid leaks; correct transfers; manage shared resources.</li>
+  <li><strong>Precision &amp; Error Handling:</strong> Consistent FP precision; robust error handling.</li>
+  <li><strong>API Compatibility:</strong> CUDA runtime/driver APIs are backward compatible — apps compiled against older CUDA continue to run on newer versions.</li>
+</ul>
+
+<h2>6. C++ Compatibility</h2>
+<ul>
+  <li>CUDA C++ extends C++ for both host and device code.</li>
+  <li>Supports C++ Standard Library (data structures, algorithms) — though not all features are supported in device code.</li>
+  <li>Modern C++ features: lambdas, range-based for loops, auto, smart pointers.</li>
+  <li><strong>No C++ exceptions (try-catch) in device code.</strong> Use CUDA-specific error handling.</li>
+  <li>Namespaces and classes supported; some restrictions on inheritance, virtual functions, complex data structures in kernels.</li>
+  <li>Separate compilation units via <code>-rdc</code>.</li>
+  <li>Template metaprogramming supported.</li>
+</ul>
+
+<h2>7. 64-Bit Compatibility</h2>
+<ul>
+  <li>CUDA fully supports 64-bit host and device code.</li>
+  <li>Large memory spaces; 64-bit integer types (<code>long long</code>); 64-bit floating point (<code>double</code>).</li>
+  <li>Significantly larger addressable memory than 32-bit mode.</li>
+  <li>CUDA libraries (cuBLAS, cuDNN, cuFFT) fully support 64-bit data types and addressing.</li>
+</ul>
+
+<h2>8. CUDA Runtime</h2>
+<p>The CUDA Runtime is the software layer that bridges host code and GPU hardware.</p>
+<h3>Key Components</h3>
+<ul>
+  <li><strong>Device Management:</strong> Query and manage GPUs; <code>cudaGetDeviceProperties</code>, <code>cudaSetDevice</code>.</li>
+  <li><strong>Memory Management:</strong> <code>cudaMalloc</code>, <code>cudaMemcpy</code>, <code>cudaFree</code>.</li>
+  <li><strong>Kernel Execution:</strong> <code>&lt;&lt;&lt;...&gt;&gt;&gt;</code> syntax or <code>cudaLaunchKernel</code>.</li>
+  <li><strong>Synchronization:</strong> <code>cudaDeviceSynchronize</code>, <code>cudaStreamSynchronize</code>.</li>
+  <li><strong>Error Handling:</strong> <code>cudaGetLastError</code>, <code>cudaPeekAtLastError</code>.</li>
+</ul>
+<h3>Runtime API vs Driver API</h3>
+<ul>
+  <li><strong>Runtime API (High-Level):</strong> Simpler, commonly used for most CUDA apps.</li>
+  <li><strong>Driver API (Low-Level):</strong> Finer-grained control; used for specific use cases requiring advanced control.</li>
+</ul>
+
+<h2>9. Case Study: Image Feature Extraction (Sobel Edge Detection)</h2>
+<p><em>Source: Unit IV PDF — "CASE STUDY" section.</em></p>
+<p>The PDF presents a CUDA implementation of Sobel edge detection. Each GPU thread maps to an output pixel, computes the gradient in x and y directions using Sobel 3×3 masks, and writes the magnitude. The kernel launch uses a 2D grid (e.g., 16×16 blocks) and the result is copied back to the CPU.</p>
+
+<div class="code-block">
+  <span class="code-label">sobel.cu (from PDF case study)</span>
+  <pre><span class="kw">__global__</span> <span class="type">void</span> <span class="fn">sobelEdgeDetection</span>(<span class="kw">const</span> <span class="type">unsigned</span> <span class="type">char</span>* inputImage, <span class="type">unsigned</span> <span class="type">char</span>* outputImage, <span class="type">int</span> width, <span class="type">int</span> height) {
+    <span class="type">int</span> x = blockIdx.x * blockDim.x + threadIdx.x;
+    <span class="type">int</span> y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    <span class="kw">if</span> (x &lt; width - <span class="num">1</span> &amp;&amp; y &lt; height - <span class="num">1</span> &amp;&amp; x &gt; <span class="num">0</span> &amp;&amp; y &gt; <span class="num">0</span>) {
+        <span class="type">int</span> sobelX[<span class="num">3</span>][<span class="num">3</span>] = {{-<span class="num">1</span>,<span class="num">0</span>,<span class="num">1</span>}, {-<span class="num">2</span>,<span class="num">0</span>,<span class="num">2</span>}, {-<span class="num">1</span>,<span class="num">0</span>,<span class="num">1</span>}};
+        <span class="type">int</span> sobelY[<span class="num">3</span>][<span class="num">3</span>] = {{-<span class="num">1</span>,-<span class="num">2</span>,-<span class="num">1</span>}, {<span class="num">0</span>,<span class="num">0</span>,<span class="num">0</span>}, {<span class="num">1</span>,<span class="num">2</span>,<span class="num">1</span>}};
+
+        <span class="type">int</span> gradientX = <span class="num">0</span>, gradientY = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="type">int</span> i = -<span class="num">1</span>; i &lt;= <span class="num">1</span>; i++) {
+            <span class="kw">for</span> (<span class="type">int</span> j = -<span class="num">1</span>; j &lt;= <span class="num">1</span>; j++) {
+                <span class="type">int</span> pixel = inputImage[(y+i)*width + (x+j)];
+                gradientX += pixel * sobelX[i+<span class="num">1</span>][j+<span class="num">1</span>];
+                gradientY += pixel * sobelY[i+<span class="num">1</span>][j+<span class="num">1</span>];
+            }
+        }
+        <span class="type">int</span> magnitude = <span class="fn">abs</span>(gradientX) + <span class="fn">abs</span>(gradientY);
+        outputImage[y*width + x] = (<span class="type">unsigned</span> <span class="type">char</span>)magnitude;
+    }
+}</pre>
+</div>
+</div>
+          `
+        }
+      ]
+    },
+    {
+      id: "u5", title: "Unit V: Algorithms on GPU",
+      sections: [
+        {
+          id: "u5pa", title: "Part-A: 2-Mark Questions",
+          content: `
+<div class="unit-heading">Unit V: Algorithms on GPU</div>
+<div class="unit-sub">Part-A — 2-Mark Quick Revision</div>
+
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Part-A · 2 Marks Each</div>
+  <div class="q-title">Short Answer Questions</div>
+  <div class="q-marks">2M × 2 = 4 Marks</div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q1: Define a sparse matrix and construct a simple example.</div>
+  <div class="qa-a">
+    <p><strong>Definition:</strong> A sparse matrix is a matrix in which the majority of its elements are zero. Because storing zero values wastes memory and compute cycles, sparse matrices are stored using specialized compressed formats like Compressed Sparse Row (CSR).</p>
+    <p><strong>Example:</strong></p>
+    <div class="math-block" style="text-align:center;">
+      A = ⎡ <span class="num">3</span>  <span class="num">0</span>  <span class="num">1</span> ⎤<br>
+      &nbsp;&nbsp;&nbsp;⎢ <span class="num">0</span>  <span class="num">0</span>  <span class="num">0</span> ⎥<br>
+      &nbsp;&nbsp;&nbsp;⎣ <span class="num">0</span>  <span class="num">2</span>  <span class="num">4</span> ⎦
+    </div>
+  </div>
+</div>
+
+<div class="qa-card">
+  <div class="qa-q">Q2: Define the Inclusive Parallel Prefix Sum (Scan) operation.</div>
+  <div class="qa-a">
+    <p><strong>Definition:</strong> Given an input array X = [x₀, x₁, x₂, …], an inclusive prefix sum computes an output array Y where each element yᵢ equals the cumulative sum of all input elements from index 0 up to index i:</p>
+    <div class="math-block">
+      y<sub>i</sub> = Σ <span class="op">(x<sub>j</sub>)</span> for j = <span class="num">0</span> to i
+    </div>
+    <p><strong>Significance:</strong> It converts seemingly sequential recursive dependencies into efficient data-parallel operations.</p>
+  </div>
+</div>
+</div>
+          `
+        },
+        {
+          id: "u5q5", title: "Q5: Convolution & Parallel Convolution",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 5 · Sessional Paper II</div>
+  <div class="q-title">Define convolution and explain the significance of parallel convolution algorithm.</div>
+  <div class="q-marks">8M · CO-3,5</div>
+</div>
+
+<h2>1. Definition of Convolution</h2>
+<p><em>Source: Unit V PDF — "5.1.1 Convolution" section.</em></p>
+<p>Convolution is a fundamental mathematical array operation where each output data element is a weighted sum of a collection of neighboring input elements. The weights are defined by an input mask array, commonly referred to as the <strong>convolution kernel</strong> (or <strong>convolution mask</strong> in GPU terminology to avoid conflict with CUDA kernel functions). The same convolution mask is typically used for all elements of the array.</p>
+<ul>
+  <li>In <strong>1D signals</strong> (e.g., audio processing), the input data are in 1D form and represent signal volume as a function of time.</li>
+  <li>In <strong>2D image processing</strong> (e.g., Sobel edge detection), a 2D filter matrix slides across pixel coordinates (x,y) to compute gradient magnitudes.</li>
+</ul>
+
+<h3>1D Convolution Example (from PDF Fig. 5.1)</h3>
+<p>A five-element mask M = [3, 4, 5, 4, 3] is applied to input N = [1, 2, 3, 4, 5, 6, 7]. Each output element P[i] is a weighted sum of N[i-2] through N[i+2]:</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">1D Convolution — Mask Sliding Over Input Array</div>
+  <div class="conv-1d">
+    <div>
+      <div class="conv-mask-label" style="text-align:center;">Input Array N</div>
+      <div class="conv-array">
+        <div class="conv-elem">1</div><div class="conv-elem">2</div><div class="conv-elem">3</div><div class="conv-elem">4</div><div class="conv-elem">5</div><div class="conv-elem">6</div><div class="conv-elem">7</div>
+      </div>
+    </div>
+    <div>
+      <div class="conv-mask-label" style="text-align:center;">Mask M (5 elements)</div>
+      <div class="conv-array">
+        <div class="conv-elem masked">3</div><div class="conv-elem masked">4</div><div class="conv-elem masked">5</div><div class="conv-elem masked">4</div><div class="conv-elem masked">3</div>
+      </div>
+    </div>
+    <div>
+      <div class="conv-mask-label" style="text-align:center;">P[2] = 1·3 + 2·4 + 3·5 + 4·4 + 5·3 = 57</div>
+      <div class="conv-array">
+        <div class="conv-elem">?</div><div class="conv-elem">?</div><div class="conv-elem output">57</div><div class="conv-elem">?</div><div class="conv-elem">?</div><div class="conv-elem">?</div><div class="conv-elem">?</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="conv-formula">
+  P[i] = Σ (N[i + offset] × M[offset]) for all valid offsets in the mask
+</div>
+
+<h3>Boundary Condition — Ghost/Halo Elements</h3>
+<p>Because convolution is defined in terms of neighboring elements, boundary conditions exist for output elements near the ends of an array. A typical approach is to define a default value (usually 0) for missing N elements. These missing elements are referred to as <strong>ghost elements</strong> (or <strong>halo elements</strong> in tiling contexts).</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Ghost/Halo Elements at Boundaries</div>
+  <div class="conv-1d">
+    <div class="conv-array">
+      <div class="conv-elem ghost">0</div><div class="conv-elem ghost">0</div><div class="conv-elem">1</div><div class="conv-elem">2</div><div class="conv-elem">3</div><div class="conv-elem">4</div><div class="conv-elem">5</div><div class="conv-elem ghost">0</div><div class="conv-elem ghost">0</div>
+    </div>
+    <div style="font-size:11px; color:var(--text-tertiary);">Dashed boxes = ghost elements (assumed 0) used to compute boundary outputs</div>
+  </div>
+</div>
+
+<h2>2. Significance of Parallel Convolution Algorithms</h2>
+<p><em>Source: Unit V PDF — significance discussion.</em></p>
+
+<ul>
+  <li><strong>Massive Data-Parallelism:</strong> The calculation of all output P elements can be done in parallel — every output is independent. This makes convolution an ideal problem for parallel computing on GPUs.</li>
+  <li><strong>Shared Memory Tiling &amp; Bandwidth Reduction:</strong> Naive global memory access causes massive DRAM traffic because adjacent output pixels re-read overlapping input elements. Parallel tiled convolution utilizes on-chip shared memory and <strong>halo/ghost element caching</strong> to load input tiles once, drastically cutting global memory latency.</li>
+  <li><strong>Real-Time Performance:</strong> Enables real-time execution of computer vision algorithms, CNN feature extraction, and HD video filtering.</li>
+</ul>
+
+<h3>Parallel Patterns for Convolution (from PDF)</h3>
+<ul>
+  <li><strong>Data Parallelism:</strong> Split input data; apply convolution to each chunk in parallel; combine results.</li>
+  <li><strong>Convolution Tiling:</strong> Break input and filter into tiles to exploit data locality and reduce memory usage.</li>
+  <li><strong>FFT Convolution:</strong> Convolution in spatial domain = point-wise multiplication in frequency domain (convolution theorem).</li>
+  <li><strong>Winograd's Minimal Filtering:</strong> Reduces number of multiplications.</li>
+  <li><strong>Im2Col + Direct Convolution:</strong> Convert patches to columns, turning convolution into matrix multiplication.</li>
+  <li><strong>Group Convolution:</strong> Divide channels into groups; perform convolution within each group independently.</li>
+</ul>
+
+<div class="note">
+  <strong>Key Insight:</strong> The same mask slides across all positions. Each output element is an inner product between the mask and a neighborhood of input elements centered at that position.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u5q6", title: "Q6: OpenCL & Jetson Nano AI",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 6 · Sessional Paper II</div>
+  <div class="q-title">(a) Construct the architecture of OpenCL and explain its programming model. (b) Outline steps to build AI applications on NVIDIA Jetson Nano.</div>
+  <div class="q-marks">4M + 4M · CO-4,5</div>
+</div>
+
+<h2>(a) OpenCL Architecture &amp; Programming Model [4 Marks] <span class="add-tag">ADDITIONAL DETAIL</span></h2>
+
+<div class="warn">
+  <strong>Note on coverage:</strong> The Unit V PDF mentions OpenCL briefly in the heterogeneous-cluster section but does not provide a full architecture answer. The four-model description below is standard OpenCL material commonly expected in the exam — treat it as additional exam material, not as content directly from the PDF.
+</div>
+
+<p><strong>OpenCL (Open Computing Language)</strong> is an open standard for heterogeneous computing across CPUs, GPUs, DSPs, and hardware accelerators.</p>
+
+<h3>Four Core OpenCL Models</h3>
+<ol>
+  <li><strong>Platform Model:</strong> Defines one Host processor connected to one or more OpenCL Devices. Each device is subdivided into multiple <strong>Compute Units (CUs)</strong>, which contain one or more <strong>Processing Elements (PEs)</strong> where kernels execute.</li>
+  <li><strong>Execution Model:</strong> Host submits compute kernels (functions written in OpenCL C) to command queues for asynchronous execution on devices. The index space is called <strong>NDRange</strong>; work-items (analogous to CUDA threads) are grouped into <strong>work-groups</strong> (analogous to CUDA thread blocks).</li>
+  <li><strong>Memory Model:</strong> Defines Global, Constant, Local, and Private memory spaces.</li>
+  <li><strong>Programming Model:</strong> Supports both data-parallel and task-parallel paradigms.</li>
+</ol>
+
+<div class="arch-note">
+  <strong>⚠ Correct mapping (avoid oversimplification):</strong> Work-groups are <em>scheduled onto</em> compute units — it is <strong>not</strong> a guaranteed one-to-one mapping. A CU can host multiple work-groups concurrently if resources allow, and a work-group runs entirely within one CU (it cannot span CUs). This is analogous to CUDA's rule that a thread block runs entirely within one SM, while an SM can host multiple blocks.
+</div>
+
+<h3>CUDA ↔ OpenCL Terminology Mapping</h3>
+<table>
+  <tr><th>CUDA</th><th>OpenCL</th></tr>
+  <tr><td>Thread</td><td>Work-Item</td></tr>
+  <tr><td>Thread Block</td><td>Work-Group</td></tr>
+  <tr><td>Grid</td><td>NDRange</td></tr>
+  <tr><td>Streaming Multiprocessor (SM)</td><td>Compute Unit (CU)</td></tr>
+  <tr><td>CUDA Core</td><td>Processing Element (PE)</td></tr>
+  <tr><td>Shared Memory</td><td>Local Memory</td></tr>
+  <tr><td>Registers / Local Memory</td><td>Private Memory</td></tr>
+</table>
+
+<h2>(b) Steps to Build AI Applications on NVIDIA Jetson Nano [4 Marks] <span class="add-tag">ADDITIONAL</span></h2>
+
+<div class="warn">
+  <strong>Note on coverage:</strong> The Jetson Nano pipeline below is additional exam material not explicitly covered in the supplied Unit V PDF. It is a standard workflow answer for edge-AI deployment.
+</div>
+
+<div class="diagram-box">
+  <div class="diagram-title">Jetson Nano AI Application Pipeline</div>
+  <div class="dnn-pipeline">
+    <div class="dnn-stage"><strong>1. Hardware Setup</strong><div>Flash JetPack SDK</div></div>
+    <div class="dnn-arrow">→</div>
+    <div class="dnn-stage"><strong>2. Environment</strong><div>PyTorch/TF for Jetson</div></div>
+    <div class="dnn-arrow">→</div>
+    <div class="dnn-stage"><strong>3. Data Capture</strong><div>CSI/USB Cameras + OpenCV</div></div>
+    <div class="dnn-arrow">→</div>
+    <div class="dnn-stage"><strong>4. Train &amp; Quantize</strong><div>FP32 → INT8</div></div>
+    <div class="dnn-arrow">→</div>
+    <div class="dnn-stage"><strong>5. TensorRT Deploy</strong><div>Real-time inference</div></div>
+  </div>
+</div>
+
+<ol>
+  <li><strong>Hardware Setup &amp; OS Flashing:</strong> Flash JetPack SDK onto a micro-SD card, containing the Linux OS, CUDA drivers, TensorRT, and OpenCV libraries.</li>
+  <li><strong>Environment Configuration:</strong> Configure Python, PyTorch/TensorFlow frameworks optimized specifically for the Jetson Nano's GPU architecture.</li>
+  <li><strong>Data Acquisition &amp; Preprocessing:</strong> Capture video streams via CSI/USB cameras and preprocess frames using OpenCV.</li>
+  <li><strong>Model Training &amp; Quantization:</strong> Train deep learning models on a host workstation and quantize weights (e.g., FP32 to INT8) for low-power edge execution.</li>
+  <li><strong>Inference Deployment with TensorRT:</strong> Deploy the optimized model using TensorRT inference engines to achieve real-time object detection or classification at the edge.</li>
+</ol>
+</div>
+          `
+        },
+        {
+          id: "u5q9", title: "Q9: Parallel Convolution & DNN [FIXED]",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 9 · Regular Paper <span class="fix-tag">FIXED</span></div>
+  <div class="q-title">(a) Explain parallel convolution and its importance in image processing. (b) Develop a Deep Neural Network execution on GPU with one example algorithm.</div>
+  <div class="q-marks">5M + 5M · CO-4,5</div>
+</div>
+
+<h2>(a) Parallel Convolution in Image Processing [5 Marks]</h2>
+
+<h3>Mechanism (from PDF)</h3>
+<p>In 2D parallel convolution, each GPU thread is mapped to an output pixel coordinate (x, y). The thread loads a neighborhood patch of input pixels, multiplies them element-wise with the filter mask, and accumulates the sum into an output pixel.</p>
+
+<h3>Importance</h3>
+<p>It forms the core mathematical foundation for essential computer vision tasks, including edge detection (Sobel/Laplacian filters), image blurring, sharpening, noise reduction, and feature extraction layers in deep convolutional neural networks (CNNs).</p>
+
+<h3>Basic 1D Parallel Convolution Kernel <span class="fix-tag">FIXED</span></h3>
+
+<div class="warn">
+  <strong>Correction:</strong> The earlier HTML (inherited from the PDF) wrote <code>P[i] = Pvalue;</code> <em>outside</em> any boundary check. When the grid launches extra threads to fill the final block, those threads write past the end of <code>P</code>. The corrected kernel below guards the entire computation and write with <code>if (i &lt; Width)</code>.
+</div>
+
+<div class="code-block">
+  <span class="code-label">convolution_1d.cu — CORRECTED with boundary guard</span>
+  <pre><span class="kw">__global__</span> <span class="type">void</span> <span class="fn">convolution_1D_basic_kernel</span>(<span class="type">float</span> *N, <span class="type">float</span> *M, <span class="type">float</span> *P,
+                                     <span class="type">int</span> Mask_Width, <span class="type">int</span> Width) {
+    <span class="type">int</span> i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    <span class="com">// OUTER BOUNDARY GUARD — prevents threads beyond Width from</span>
+    <span class="com">// writing into P. The earlier version (and the PDF) omitted this.</span>
+    <span class="kw">if</span> (i &lt; Width) {
+        <span class="type">float</span> Pvalue = <span class="num">0.0f</span>;
+        <span class="type">int</span> N_start_point = i - (Mask_Width / <span class="num">2</span>);
+
+        <span class="kw">for</span> (<span class="type">int</span> j = <span class="num">0</span>; j &lt; Mask_Width; j++) {
+            <span class="com">// Inner boundary check: skip ghost elements</span>
+            <span class="kw">if</span> (N_start_point + j &gt;= <span class="num">0</span> &amp;&amp; N_start_point + j &lt; Width) {
+                Pvalue += N[N_start_point + j] * M[j];
+            }
+        }
+
+        P[i] = Pvalue;
+    }
+}</pre>
+</div>
+
+<h4>Why two boundary checks?</h4>
+<ul>
+  <li><strong>Outer <code>if (i &lt; Width)</code>:</strong> The grid is launched with <code>(Width + blockSize - 1) / blockSize</code> blocks; the last block usually contains threads with <code>i ≥ Width</code>. Those threads must not write to <code>P[i]</code>.</li>
+  <li><strong>Inner <code>if (N_start_point + j ≥ 0 &amp;&amp; ... &lt; Width)</code>:</strong> For valid output positions near the array ends, the mask covers ghost elements outside the array. Those ghost positions are skipped (treated as 0).</li>
+</ul>
+
+<h2>(b) Deep Neural Network Execution on GPU [5 Marks] <span class="add-tag">ADDITIONAL DETAIL</span></h2>
+
+<div class="warn">
+  <strong>Note on coverage:</strong> The Unit V PDF's "Programming Heterogeneous Cluster" section mentions using libraries like cuBLAS/cuDNN but does not give a full DNN execution answer. The pipeline below is standard material for CNN-layer execution on GPU.
+</div>
+
+<h3>Example: Forward pass execution of a Convolutional Layer in a CNN</h3>
+
+<div class="diagram-box">
+  <div class="diagram-title">DNN Convolutional Layer Execution on GPU</div>
+  <div class="dnn-pipeline">
+    <div class="dnn-stage"><strong>1. Im2Col Transform</strong><div>Image patches → columns</div></div>
+    <div class="dnn-arrow">→</div>
+    <div class="dnn-stage"><strong>2. cuBLAS/cuDNN GEMM</strong><div>Parallel matrix multiply</div></div>
+    <div class="dnn-arrow">→</div>
+    <div class="dnn-stage"><strong>3. ReLU Activation</strong><div>Element-wise parallel</div></div>
+    <div class="dnn-arrow">→</div>
+    <div class="dnn-stage"><strong>4. Max-Pooling</strong><div>Parallel reduction</div></div>
+  </div>
+</div>
+
+<h3>GPU Execution Steps</h3>
+<ol>
+  <li><strong>Im2Col Transformation:</strong> Convert input image patches into columns so that convolution operations can be expressed as a highly optimized matrix multiplication (<code>GEMM</code>).</li>
+  <li><strong>cuBLAS / cuDNN Acceleration:</strong> Utilize NVIDIA's tuned <code>cuDNN</code> library to execute parallel matrix multiplications across thousands of GPU CUDA cores.</li>
+  <li><strong>Activation &amp; Pooling:</strong> Apply parallel element-wise activation functions (ReLU) and max-pooling reductions across feature maps directly on the device.</li>
+</ol>
+</div>
+          `
+        },
+        {
+          id: "u5q10", title: "Q10: OpenCL Architecture Detail",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Question 10 · Regular Paper <span class="add-tag">ADDITIONAL DETAIL</span></div>
+  <div class="q-title">Explain in detail OpenCL architecture.</div>
+  <div class="q-marks">10M · CO-4</div>
+</div>
+
+<div class="warn">
+  <strong>Note on coverage:</strong> The Unit V PDF mentions OpenCL only briefly. The detailed architecture below is standard OpenCL material commonly expected in the exam — treat it as additional exam material, not as content directly from the supplied PDF.
+</div>
+
+<h2>1. OpenCL Architectural Overview</h2>
+<p>OpenCL provides a vendor-neutral, cross-platform standard for programming heterogeneous systems comprising CPUs, GPUs, DSPs, and hardware accelerators.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">OpenCL Heterogeneous Architecture</div>
+  <div class="opencl-arch">
+    <div class="opencl-host">HOST SYSTEM — Manages Context, Command Queues, Host Memory</div>
+    <div style="color:var(--text-tertiary); font-size:12px;">↓ Command Queue Submissions &nbsp;|&nbsp; Buffer Transfers ↓</div>
+    <div class="opencl-devices">
+      <div class="opencl-device">
+        <div class="opencl-device-title">OPENCL DEVICE 1 (Multi-Core CPU)</div>
+        <div class="cu-row">
+          <div class="cu-box">CU 0<div class="cu-pe">PE · PE · PE</div></div>
+          <div class="cu-box">CU 1<div class="cu-pe">PE · PE · PE</div></div>
+        </div>
+      </div>
+      <div class="opencl-device">
+        <div class="opencl-device-title">OPENCL DEVICE 2 (GPU)</div>
+        <div class="cu-row">
+          <div class="cu-box">CU 0<div class="cu-pe">PE · PE · PE</div></div>
+          <div class="cu-box">CU 1<div class="cu-pe">PE · PE · PE</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>2. The Four Core OpenCL Models</h2>
+
+<h3>A. Platform Model</h3>
+<p>Defines the host processor coordinating execution across one or more OpenCL devices. Each device is subdivided into multiple <strong>Compute Units (CUs)</strong>, which contain one or more <strong>Processing Elements (PEs)</strong> where kernels execute.</p>
+
+<div class="arch-note">
+  <strong>⚠ Scheduling, not 1:1 mapping:</strong> Work-groups are <em>scheduled onto</em> compute units. A CU can host multiple work-groups concurrently when resources (registers, local memory) permit. A work-group, once placed on a CU, runs entirely within that CU and cannot span multiple CUs. This mirrors CUDA's rule that a thread block lives entirely within one SM.
+</div>
+
+<h3>B. Execution Model</h3>
+<ul>
+  <li><strong>Kernels:</strong> Functions written in OpenCL C that execute on devices.</li>
+  <li><strong>NDRange:</strong> An indexing space (1D, 2D, or 3D) that defines work-items (threads) grouped into <strong>Work-Groups</strong>. Work-groups map to compute units, analogous to CUDA thread blocks mapping to SMs.</li>
+</ul>
+
+<h3>C. Memory Model</h3>
+
+<table>
+  <tr><th>OpenCL Memory</th><th>CUDA Equivalent</th><th>Description</th></tr>
+  <tr>
+    <td><strong>Global Memory</strong></td>
+    <td>Global DRAM</td>
+    <td>Accessible by all work-items across all work-groups</td>
+  </tr>
+  <tr>
+    <td><strong>Constant Memory</strong></td>
+    <td>Constant Memory</td>
+    <td>Read-only global region cached for fast access</td>
+  </tr>
+  <tr>
+    <td><strong>Local Memory</strong></td>
+    <td>Shared Memory</td>
+    <td>Shared memory local to a specific work-group</td>
+  </tr>
+  <tr>
+    <td><strong>Private Memory</strong></td>
+    <td>Registers / Local</td>
+    <td>Memory private to an individual work-item</td>
+  </tr>
+</table>
+
+<h3>D. Programming Model</h3>
+<p>Supports both <strong>Data-Parallel</strong> (same code executed across massive data elements) and <strong>Task-Parallel</strong> (independent tasks executed concurrently) programming styles, giving developers flexible control over heterogeneous hardware resource scheduling.</p>
+
+<div class="note">
+  <strong>CUDA vs OpenCL Mapping:</strong> CUDA Thread → OpenCL Work-Item; CUDA Block → OpenCL Work-Group; CUDA Grid → OpenCL NDRange; CUDA SM → OpenCL Compute Unit; CUDA Core → OpenCL Processing Element.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u5blelloch", title: "Blelloch Parallel Prefix Sum [FIXED]",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Algorithm Deep-Dive <span class="fix-tag">FIXED</span></div>
+  <div class="q-title">The Blelloch Parallel Prefix Sum (Scan) Algorithm</div>
+  <div class="q-marks">Work-Efficient O(N) Total Work · O(log N) Steps</div>
+</div>
+
+<p>The <strong>Prefix Sum (Scan)</strong> operation takes an input array and produces an output array where each element contains the cumulative sum of all preceding elements up to that index. While a sequential scan takes O(N) operations, the <strong>Blelloch algorithm</strong> is a high-performance <em>work-efficient</em> parallel scan designed for GPUs.</p>
+
+<h2>Phase 1: The Reduction (Upsweep) Phase</h2>
+<p>In the upsweep phase, the algorithm builds a balanced binary tree of partial sums bottom-up. Threads perform pairwise additions at increasing strides (1, 2, 4, …, N/2), storing intermediate sums in parent nodes.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Upsweep (Reduction) Phase — Building Partial Sums</div>
+  <div class="scan-tree">
+    <div class="tree-phase-label">Level 0 (Input)</div>
+    <div class="tree-row">
+      <div class="tree-node">x0</div><div class="tree-node">x1</div><div class="tree-node">x2</div><div class="tree-node">x3</div>
+    </div>
+    <div class="tree-op">↓ pairwise add at stride 1</div>
+    <div class="tree-phase-label">Level 1</div>
+    <div class="tree-row">
+      <div class="tree-node">x0</div><div class="tree-node active">Σx0..x1</div><div class="tree-node">x2</div><div class="tree-node active">Σx2..x3</div>
+    </div>
+    <div class="tree-op">↓ pairwise add at stride 2</div>
+    <div class="tree-phase-label">Level 2 (Root — Total Sum)</div>
+    <div class="tree-row">
+      <div class="tree-node">x0</div><div class="tree-node">Σx0..x1</div><div class="tree-node">x2</div><div class="tree-node root">Σx0..x3</div>
+    </div>
+  </div>
+</div>
+
+<h2>Phase 2: The Distribution (Downsweep) Phase</h2>
+<p>In the downsweep phase, the algorithm traverses back down the tree from the root, introducing the identity element (0 for addition) at the root and distributing partial sums to compute the final prefix values.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Downsweep (Distribution) Phase — Computing Final Prefix Sums</div>
+  <div class="scan-tree">
+    <div class="tree-phase-label">Root → set to identity (0)</div>
+    <div class="tree-row">
+      <div class="tree-node">—</div><div class="tree-node">—</div><div class="tree-node">—</div><div class="tree-node root">0</div>
+    </div>
+    <div class="tree-op">↓ distribute at stride 2</div>
+    <div class="tree-row">
+      <div class="tree-node">—</div><div class="tree-node active">0</div><div class="tree-node">—</div><div class="tree-node active">Σx0..x1</div>
+    </div>
+    <div class="tree-op">↓ distribute at stride 1</div>
+    <div class="tree-row">
+      <div class="tree-node active">0</div><div class="tree-node active">x0</div><div class="tree-node active">Σx0..x1</div><div class="tree-node active">Σx0..x2</div>
+    </div>
+    <div class="tree-phase-label" style="color:var(--cyan);">Final Output (Inclusive Prefix Sum)</div>
+  </div>
+</div>
+
+<h2>Why Blelloch is Preferred</h2>
+<p>Unlike the simpler Hillis-Steele scan (which performs O(N log N) redundant additions and wastes memory bandwidth), the <strong>Blelloch scan</strong> is strictly <strong>work-efficient</strong>, performing exactly O(N) operations. This makes it ideal for power-constrained or high-throughput GPU environments.</p>
+
+<h2>Work-Efficient Kernel Implementation <span class="fix-tag">FIXED</span></h2>
+
+<div class="warn">
+  <strong>Corrections applied:</strong>
+  <ol>
+    <li><strong>Boundary initialization:</strong> Threads with <code>i ≥ InputSize</code> now explicitly initialize their shared-memory position to <code>0.0f</code>. Previously, the last incomplete block could read uninitialised values during the reduction phase.</li>
+    <li><strong>Output write guard:</strong> <code>Y[i]</code> is now written only when <code>i &lt; InputSize</code>. Previously, threads beyond the input range could write past the end of <code>Y</code>.</li>
+    <li><strong>Hierarchical note:</strong> This kernel performs a scan <em>within each block</em>. A complete scan across multiple blocks needs an additional hierarchical stage that scans the per-block totals and adds them back — see the note after the code.</li>
+  </ol>
+</div>
+
+<div class="code-block">
+  <span class="code-label">blelloch_scan.cu — CORRECTED</span>
+  <pre><span class="kw">__global__</span> <span class="type">void</span> <span class="fn">work_efficient_scan_kernel</span>(<span class="type">float</span> *X, <span class="type">float</span> *Y, <span class="type">int</span> InputSize) {
+    <span class="kw">__shared__</span> <span class="type">float</span> XY[SECTION_SIZE];
+    <span class="type">int</span> i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    <span class="com">// FIX 1: Every thread initializes its shared-memory slot.</span>
+    <span class="com">// Threads beyond InputSize contribute the identity element (0)</span>
+    <span class="com">// so the reduction phase never reads uninitialised memory.</span>
+    <span class="kw">if</span> (i &lt; InputSize) {
+        XY[threadIdx.x] = X[i];
+    } <span class="kw">else</span> {
+        XY[threadIdx.x] = <span class="num">0.0f</span>;
+    }
+
+    <span class="com">// Phase 1: Reduction (Upsweep) Tree</span>
+    <span class="kw">for</span> (<span class="type">unsigned int</span> stride = <span class="num">1</span>; stride &lt; blockDim.x; stride *= <span class="num">2</span>) {
+        <span class="fn">__syncthreads</span>();
+        <span class="type">int</span> index = (threadIdx.x + <span class="num">1</span>) * <span class="num">2</span> * stride - <span class="num">1</span>;
+        <span class="kw">if</span> (index &lt; blockDim.x) {
+            XY[index] += XY[index - stride];
+        }
+    }
+
+    <span class="com">// Phase 2: Distribution (Downsweep) Tree</span>
+    <span class="kw">for</span> (<span class="type">int</span> stride = SECTION_SIZE / <span class="num">4</span>; stride &gt; <span class="num">0</span>; stride /= <span class="num">2</span>) {
+        <span class="fn">__syncthreads</span>();
+        <span class="type">int</span> index = (threadIdx.x + <span class="num">1</span>) * stride * <span class="num">2</span> - <span class="num">1</span>;
+        <span class="kw">if</span> (index + stride &lt; BLOCK_SIZE) {
+            XY[index + stride] += XY[index];
+        }
+    }
+
+    <span class="fn">__syncthreads</span>();
+
+    <span class="com">// FIX 2: Write Y[i] only for valid input indices.</span>
+    <span class="kw">if</span> (i &lt; InputSize) {
+        Y[i] = XY[threadIdx.x];
+    }
+}</pre>
+</div>
+
+<div class="math-block">
+  <span class="var">Total Additions:</span> <span class="op">2N - 3</span> (vs N log N for Hillis-Steele)<br>
+  <span class="var">Parallel Steps:</span> <span class="op">2 × log₂(N)</span>
+</div>
+
+<h2>Multi-Block (Hierarchical) Scan <span class="fix-tag">FIXED</span></h2>
+
+<div class="warn">
+  <strong>The kernel above scans within a single block.</strong> For input arrays larger than <code>SECTION_SIZE</code>, the PDF explicitly mentions a hierarchical approach is required. The outline:
+</div>
+
+<ol>
+  <li><strong>Phase A — Per-block scan:</strong> Run the work-efficient kernel above for each block. Each block produces a scanned section, plus a per-block total (the last element of <code>XY</code> before the downsweep resets it).</li>
+  <li><strong>Phase B — Scan the block totals:</strong> Collect the per-block totals into a small array and scan that array (recursively if needed) using the same kernel.</li>
+  <li><strong>Phase C — Add-back:</strong> Add each block's accumulated prefix from Phase B to every element of that block's output from Phase A. This produces the global prefix sum.</li>
+</ol>
+
+<p>This hierarchical extension is what the PDF means by "extending the work-efficient parallel scan algorithm to handle input sets of arbitrary sizes."</p>
+</div>
+          `
+        },
+        {
+          id: "u5csr", title: "CSR SpMV Algorithm",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Algorithm Deep-Dive</div>
+  <div class="q-title">Compressed Sparse Row (CSR) SpMV Algorithm</div>
+  <div class="q-marks">Sparse Matrix-Vector Multiplication on GPU</div>
+</div>
+
+<p><em>Source: Unit V PDF — "5.2 Sparse Matrix" section.</em></p>
+
+<p><strong>Sparse Matrix-Vector Multiplication (SpMV)</strong> computes the product of a sparse matrix A and a dense vector X to produce a dense vector Y (Y = A · X). Because most elements in a sparse matrix are zero, storing the entire 2D matrix wastes massive amounts of memory.</p>
+
+<h2>1. The CSR Storage Format</h2>
+<p>The <strong>Compressed Sparse Row (CSR)</strong> format compresses sparse matrices by dropping all zero values and storing only the non-zeros across three linear 1D arrays:</p>
+<ul>
+  <li><strong><code>data[]</code>:</strong> Stores all non-zero numerical values row by row.</li>
+  <li><strong><code>col_index[]</code>:</strong> Stores the corresponding column index for each non-zero element in <code>data[]</code>.</li>
+  <li><strong><code>row_ptr[]</code>:</strong> Stores pointers indicating the starting index in <code>data[]</code> for each row (plus a final element equal to the total count of non-zeros).</li>
+</ul>
+
+<h2>2. Example Conversion (from PDF Fig. 5.14 / 5.15)</h2>
+<p>Consider a 4×4 matrix A:</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">CSR Format Conversion</div>
+  <div class="csr-vis">
+    <div>
+      <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:6px; text-align:center;">Original Sparse Matrix A (4×4)</div>
+      <div class="csr-matrix" style="grid-template-columns:repeat(4,1fr);">
+        <div class="csr-cell nz">3</div><div class="csr-cell zero">0</div><div class="csr-cell nz">1</div><div class="csr-cell zero">0</div>
+        <div class="csr-cell zero">0</div><div class="csr-cell zero">0</div><div class="csr-cell zero">0</div><div class="csr-cell zero">0</div>
+        <div class="csr-cell zero">0</div><div class="csr-cell nz">2</div><div class="csr-cell nz">4</div><div class="csr-cell nz">1</div>
+        <div class="csr-cell nz">1</div><div class="csr-cell zero">0</div><div class="csr-cell zero">0</div><div class="csr-cell nz">1</div>
+      </div>
+    </div>
+    <div style="color:var(--nv-green); font-size:20px;">→</div>
+    <div class="csr-arrays">
+      <div class="csr-array-row">
+        <div class="csr-array-label">data[]</div>
+        <div class="csr-array-cells">
+          <div class="csr-array-cell" style="border-color:var(--nv-green); color:var(--nv-green);">3</div>
+          <div class="csr-array-cell" style="border-color:var(--nv-green); color:var(--nv-green);">1</div>
+          <div class="csr-array-cell" style="border-color:var(--nv-green); color:var(--nv-green);">2</div>
+          <div class="csr-array-cell" style="border-color:var(--nv-green); color:var(--nv-green);">4</div>
+          <div class="csr-array-cell" style="border-color:var(--nv-green); color:var(--nv-green);">1</div>
+          <div class="csr-array-cell" style="border-color:var(--nv-green); color:var(--nv-green);">1</div>
+          <div class="csr-array-cell" style="border-color:var(--nv-green); color:var(--nv-green);">1</div>
+        </div>
+      </div>
+      <div class="csr-array-row">
+        <div class="csr-array-label">col_index[]</div>
+        <div class="csr-array-cells">
+          <div class="csr-array-cell" style="border-color:var(--cyan); color:var(--cyan);">0</div>
+          <div class="csr-array-cell" style="border-color:var(--cyan); color:var(--cyan);">2</div>
+          <div class="csr-array-cell" style="border-color:var(--cyan); color:var(--cyan);">1</div>
+          <div class="csr-array-cell" style="border-color:var(--cyan); color:var(--cyan);">2</div>
+          <div class="csr-array-cell" style="border-color:var(--cyan); color:var(--cyan);">3</div>
+          <div class="csr-array-cell" style="border-color:var(--cyan); color:var(--cyan);">0</div>
+          <div class="csr-array-cell" style="border-color:var(--cyan); color:var(--cyan);">3</div>
+        </div>
+      </div>
+      <div class="csr-array-row">
+        <div class="csr-array-label">row_ptr[]</div>
+        <div class="csr-array-cells">
+          <div class="csr-array-cell" style="border-color:var(--purple); color:var(--purple);">0</div>
+          <div class="csr-array-cell" style="border-color:var(--purple); color:var(--purple);">2</div>
+          <div class="csr-array-cell" style="border-color:var(--purple); color:var(--purple);">2</div>
+          <div class="csr-array-cell" style="border-color:var(--purple); color:var(--purple);">5</div>
+          <div class="csr-array-cell" style="border-color:var(--purple); color:var(--purple);">7</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="font-size:11px; color:var(--text-tertiary); text-align:center; margin-top:8px;">
+    Row 0 starts at index 0 · Row 1 starts at index 2 (empty) · Row 2 starts at index 2 · Row 3 starts at index 5 · End marker = 7
+  </div>
+</div>
+
+<h2>3. Sequential CSR SpMV (from PDF Fig. 5.17)</h2>
+
+<div class="code-block">
+  <span class="code-label">sequential_spmv_csr.c — from PDF</span>
+  <pre><span class="kw">for</span> (<span class="type">int</span> row = <span class="num">0</span>; row &lt; num_rows; row++) {
+    <span class="type">float</span> dot = <span class="num">0</span>;
+    <span class="type">int</span> row_start = row_ptr[row];
+    <span class="type">int</span> row_end   = row_ptr[row + <span class="num">1</span>];
+    <span class="kw">for</span> (<span class="type">int</span> elem = row_start; elem &lt; row_end; elem++) {
+        dot += data[elem] * x[col_index[elem]];
+    }
+    y[row] += dot;
+}</pre>
+</div>
+
+<h2>4. Parallel CSR SpMV CUDA Implementation</h2>
+<p>In a parallel CSR SpMV kernel, each GPU thread is typically assigned to compute one row of the output vector Y.</p>
+
+<div class="code-block">
+  <span class="code-label">spmv_csr.cu</span>
+  <pre><span class="kw">__global__</span> <span class="type">void</span> <span class="fn">spmv_csr_kernel</span>(<span class="type">int</span> num_rows, <span class="type">int</span> *row_ptr, <span class="type">int</span> *col_index, <span class="type">float</span> *data, <span class="type">float</span> *x, <span class="type">float</span> *y) {
+    <span class="com">// Each thread handles one matrix row</span>
+    <span class="type">int</span> row = blockIdx.x * blockDim.x + threadIdx.x;
+
+    <span class="kw">if</span> (row &lt; num_rows) {
+        <span class="type">float</span> dot_product = <span class="num">0.0f</span>;
+        <span class="type">int</span> row_start = row_ptr[row];
+        <span class="type">int</span> row_end   = row_ptr[row + <span class="num">1</span>];
+
+        <span class="com">// Compute dot product of non-zero elements in this row with vector x</span>
+        <span class="kw">for</span> (<span class="type">int</span> i = row_start; i &lt; row_end; i++) {
+            dot_product += data[i] * x[col_index[i]];
+        }
+
+        y[row] = dot_product; <span class="com">// Store final result</span>
+    }
+}</pre>
+</div>
+
+<h2>5. Performance Considerations in CSR SpMV</h2>
+<p><em>Source: Unit V PDF — "5.2.2 Parallel SPMV Using CSR" section.</em></p>
+
+<ul>
+  <li><strong>Load Imbalance:</strong> If matrix rows have an uneven distribution of non-zero elements (e.g., some rows have 2 elements while others have 500), threads assigned to dense rows take much longer to finish, causing warp divergence and idle threads.</li>
+  <li><strong>Indirect Memory Access:</strong> Accessing vector elements via <code>x[col_index[i]]</code> can result in non-coalesced memory reads, which requires advanced sub-row or block-level reduction optimizations to maximize hardware memory bandwidth.</li>
+</ul>
+
+<h2>6. Padding and Transposition (from PDF 5.2.3)</h2>
+<ul>
+  <li><strong>Padding for Sparse Matrices:</strong> Used to address memory access and data alignment issues. CSR/CSC formats create more regular memory layouts. <strong>Padding with zero elements is usually avoided</strong> as it unnecessarily increases storage and computational overhead.</li>
+  <li><strong>Transposition for Sparse Matrices:</strong> Swaps rows and columns while preserving non-zero positions. Efficient parallel transposition uses "coalescing" (grouping non-zeros by row/column) and "sorting" (by row/column index).</li>
+</ul>
+
+<div class="note">
+  <strong>Key Insight (per PDF):</strong> CSR completely removes all zero elements from storage, saving memory for highly sparse matrices. The overhead is the additional <code>col_index</code> and <code>row_ptr</code> arrays. <em>The PDF does not specify a universal sparsity threshold beyond which CSR becomes worthwhile — the trade-off depends on the matrix structure and access patterns.</em>
+</div>
+</div>
+          `
+        },
+        {
+          id: "u5dp", title: "Dynamic Parallelism [NEW]",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Missing PDF Topic <span class="new-tag">NEW</span></div>
+  <div class="q-title">Dynamic Parallelism Enabled Kernel Overhead</div>
+  <div class="q-marks">From Unit V PDF — Section 5.5</div>
+</div>
+
+<div class="warn">
+  <strong>Why this section exists:</strong> The Unit V PDF contains a substantial dynamic parallelism section that the earlier HTML did not cover. This is the PDF material added back.
+</div>
+
+<h2>1. What is Dynamic Parallelism?</h2>
+<p>Dynamic parallelism is a feature in certain GPUs that allows kernels (GPU functions) to create new kernels and launch them from within the original kernel. This enables <strong>nested parallelism</strong>, where GPU threads can spawn additional work without returning to the CPU, allowing more flexible and fine-grained parallel computations.</p>
+
+<div class="diagram-box">
+  <div class="diagram-title">Dynamic Parallelism — Parent Launches Child Kernels</div>
+  <div class="dp-tree">
+    <div class="dp-node parent"><strong>Parent Kernel A</strong><br>(launched from CPU)</div>
+    <div class="dp-arrow">↓ parent thread launches children</div>
+    <div class="dp-children">
+      <div class="dp-node"><strong>Child X</strong></div>
+      <div class="dp-node"><strong>Child Y</strong></div>
+      <div class="dp-node"><strong>Child Z</strong></div>
+    </div>
+    <div class="dp-arrow">↓ child thread launches grandchild</div>
+    <div class="dp-children">
+      <div class="dp-node">Grandchild…</div>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:10px; font-size:11px; color:var(--text-tertiary);">All without CPU involvement — parent can consume child output via cudaDeviceSynchronize()</div>
+</div>
+
+<h2>2. Advantages of Dynamic Parallelism</h2>
+<ul>
+  <li><strong>Adaptive Parallelism:</strong> GPU dynamically adjusts the amount of parallelism based on the workload — useful for irregular and unpredictable tasks.</li>
+  <li><strong>Recursive Algorithms:</strong> Tree traversals or graph algorithms benefit from recursion; CDP allows these to be implemented directly on the GPU without flattening recursion into iterative loops.</li>
+  <li><strong>Hierarchical Computations:</strong> Algorithms with hierarchical structure (simulations, adaptive mesh refinement) can naturally exploit CDP.</li>
+  <li><strong>Nested Data Structures:</strong> Each level of a hierarchy can be processed by a separate kernel.</li>
+</ul>
+
+<h2>3. Challenges and Overhead</h2>
+<table>
+  <tr><th>Overhead Type</th><th>Description</th></tr>
+  <tr>
+    <td><strong>Kernel Launch Overhead</strong></td>
+    <td>Creating/launching new kernels involves context switching, parameter setup, memory allocation. Significant for small/short-lived child kernels.</td>
+  </tr>
+  <tr>
+    <td><strong>Thread Block Management</strong></td>
+    <td>GPU must manage/schedule additional thread blocks for child kernels — bookkeeping and resource allocation overhead.</td>
+  </tr>
+  <tr>
+    <td><strong>Synchronization Overhead</strong></td>
+    <td>Coordinating parent and child kernels introduces idle time for threads waiting on others.</td>
+  </tr>
+  <tr>
+    <td><strong>Data Movement Overhead</strong></td>
+    <td>Complex memory access patterns and data dependencies can cause increased data movement and cache thrashing.</td>
+  </tr>
+  <tr>
+    <td><strong>Workload Imbalance</strong></td>
+    <td>Some child kernels generate more work than others → underutilization.</td>
+  </tr>
+  <tr>
+    <td><strong>Recursive Algorithm Overhead</strong></td>
+    <td>Recursive algorithms can generate an excessive number of child kernels, multiplying overhead.</td>
+  </tr>
+</table>
+
+<h2>4. Mitigation Strategies (from PDF)</h2>
+<ul>
+  <li><strong>Kernel Fusion:</strong> Combine multiple small kernels into a single kernel to reduce launch overhead and memory access overhead.</li>
+  <li><strong>Recursive Depth Limit:</strong> Set a limit on recursion depth to avoid excessive child kernel generation.</li>
+  <li><strong>Asynchronous Execution:</strong> Utilize async execution and overlapping techniques to minimize idle time.</li>
+  <li><strong>Load Balancing:</strong> Distribute workload evenly across thread blocks.</li>
+  <li><strong>Profiling and Optimization:</strong> Profile to identify where CDP adds significant overhead; benchmark different approaches.</li>
+</ul>
+
+<h2>5. Implementing Dynamic Parallelism (from PDF 5.5.1)</h2>
+<div class="code-block">
+  <span class="code-label">dynamic_parallelism.cu — from PDF</span>
+  <pre><span class="kw">__global__</span> <span class="type">void</span> <span class="fn">recursiveKernel</span>(<span class="type">int</span> level, <span class="type">int</span> maxDepth) {
+    <span class="kw">if</span> (level &lt; maxDepth) {
+        <span class="com">// Perform some computation at the current level</span>
+
+        <span class="com">// Launch child kernels with different parameters</span>
+        <span class="type">int</span> blockSize = <span class="num">128</span>;
+        <span class="type">int</span> numBlocks = (N + blockSize - <span class="num">1</span>) / blockSize;
+        <span class="fn">recursiveKernel</span>&lt;&lt;&lt;numBlocks, blockSize&gt;&gt;&gt;(level + <span class="num">1</span>, maxDepth);
+    }
+}
+
+<span class="type">int</span> <span class="fn">main</span>() {
+    <span class="type">int</span> maxDepth = <span class="num">5</span>;
+    <span class="type">int</span> blockSize = <span class="num">128</span>;
+    <span class="type">int</span> numBlocks = (N + blockSize - <span class="num">1</span>) / blockSize;
+
+    <span class="fn">recursiveKernel</span>&lt;&lt;&lt;numBlocks, blockSize&gt;&gt;&gt;(<span class="num">0</span>, maxDepth);
+    <span class="fn">cudaDeviceSynchronize</span>();
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+</div>
+
+<div class="note">
+  <strong>PDF takeaway:</strong> Dynamic parallelism is a powerful feature, but it requires careful design and optimization to minimize overhead and achieve optimal performance. Balance the benefits of CDP with the associated overhead to make informed decisions.
+</div>
+</div>
+          `
+        },
+        {
+          id: "u5extra", title: "Additional Unit V Topics [NEW]",
+          content: `
+<div class="q-block">
+<div class="q-header">
+  <div class="q-num">Missing PDF Topics <span class="new-tag">NEW</span></div>
+  <div class="q-title">Nesting/Sync Depth · Runtime Memory · Pending Launches · Config Options · Memory Lifetime · Heterogeneous Cluster · Performance Sync · GPU Restrictions · Genetic Algorithms Case Study</div>
+  <div class="q-marks">From Unit V PDF — Sections 5.3–5.11 + Case Study</div>
+</div>
+
+<div class="warn">
+  <strong>Why this section exists:</strong> The Unit V PDF continues well beyond convolution/scan/CSR. These subsections were missing from the earlier HTML. They are condensed here as the PDF presents them.
+</div>
+
+<h2>5.3 Programming Heterogeneous Cluster</h2>
+<p>A heterogeneous cluster consists of different processing units — CPUs, GPUs, FPGAs, and specialized accelerators. Programming such clusters requires:</p>
+<ul>
+  <li><strong>Identify Hardware Resources:</strong> Understand the number and type of CPUs, GPUs, and accelerators.</li>
+  <li><strong>Choose Parallel Programming Models:</strong> OpenMP for multicore CPUs, CUDA for NVIDIA GPUs, OpenCL for heterogeneous computing.</li>
+  <li><strong>Task Partitioning and Load Balancing:</strong> Divide computation into smaller units; distribute across resources; ensure balanced load.</li>
+  <li><strong>Data Management:</strong> Minimize transfers between processing units; use shared memory, P2P communication, data locality.</li>
+  <li><strong>Use Libraries and APIs:</strong> Leverage specialized libraries optimized for different hardware.</li>
+  <li><strong>Performance Profiling and Optimization:</strong> Profile to identify bottlenecks; optimize based on results.</li>
+  <li><strong>Asynchronous Execution:</strong> Overlap computation and communication for tasks with varying computational times.</li>
+  <li><strong>Error Handling and Fault Tolerance:</strong> Robustness in heterogeneous environments.</li>
+  <li><strong>Portability:</strong> Use abstraction layers; avoid hardware-specific optimizations where possible.</li>
+</ul>
+
+<h2>5.4 Performance — Synchronization</h2>
+<p>Performance synchronization manages coordination/communication between threads or processes. Goal: minimize sync overhead while maintaining correctness and scalability.</p>
+<ul>
+  <li><strong>Avoid Unnecessary Synchronization:</strong> Only sync when required for correctness; minimize global locks/barriers.</li>
+  <li><strong>Fine-Grained Synchronization:</strong> Use multiple smaller locks or lock-free data structures instead of one global lock.</li>
+  <li><strong>Lock Hierarchies:</strong> Establish consistent lock acquisition order to prevent deadlocks.</li>
+  <li><strong>Asynchronous Communication:</strong> Non-blocking communication to overlap computation and communication.</li>
+  <li><strong>Data Locality:</strong> Optimize data layout to maximize cache efficiency and reduce sync needs.</li>
+  <li><strong>Read-Write Synchronization:</strong> Differentiate reads (concurrent-safe) from writes (require locking).</li>
+  <li><strong>Lock-Free / Wait-Free Algorithms:</strong> Reduce sync overhead in high-contention scenarios.</li>
+  <li><strong>Memory Barriers:</strong> Use judiciously to enforce ordering constraints.</li>
+  <li><strong>Load Balancing:</strong> Essential to prevent threads idling on others.</li>
+  <li><strong>Scalability:</strong> Techniques that work on small thread counts may not scale.</li>
+  <li><strong>Profiling and Benchmarking:</strong> Identify sync hotspots; benchmark different strategies.</li>
+</ul>
+
+<h2>5.6 Restrictions and Limitations of GPU Algorithms</h2>
+<ul>
+  <li><strong>Data Dependencies:</strong> GPUs perform best on data-parallel computations; strong dependencies / irregular access patterns limit gains.</li>
+  <li><strong>Memory Constraints:</strong> Limited on-chip memory (registers, shared memory) and limited global memory bandwidth.</li>
+  <li><strong>Thread Divergence:</strong> Threads in a block execute in lockstep; divergent paths reduce efficiency.</li>
+  <li><strong>Kernel Launch Overhead:</strong> Significant for small/short-lived computations.</li>
+  <li><strong>Branching and Conditionals:</strong> Branch divergence hurts performance; prefer branch-free algorithms.</li>
+  <li><strong>Synchronization:</strong> Excessive sync, especially across thread blocks, serializes execution.</li>
+  <li><strong>Limited Double-Precision Support:</strong> Historically slower than single-precision on consumer GPUs.</li>
+  <li><strong>Device-Specific Optimization:</strong> Different architectures may need different tuning.</li>
+  <li><strong>Host-Device Data Transfer:</strong> PCIe transfers add overhead; minimize transfers.</li>
+  <li><strong>Power and Thermal Constraints:</strong> High-performance GPUs consume significant power and generate heat.</li>
+</ul>
+
+<h2>5.7 Runtime-Memory Footprint</h2>
+<p>Runtime-memory footprint = memory used during execution. Includes:</p>
+<ul>
+  <li><strong>Static Memory Footprint:</strong> Determined at compile time — global variables, static data structures, constants, executable code. Typically fixed.</li>
+  <li><strong>Dynamic Memory Footprint:</strong> Used during execution; varies — heap allocations (malloc/new) and stack (local variables, function call data).</li>
+</ul>
+<h3>Key Considerations</h3>
+<ul>
+  <li><strong>Memory Allocation and Deallocation:</strong> Proper management prevents leaks, fragmentation, and overhead.</li>
+  <li><strong>Memory Leaks:</strong> Allocated but not freed; gradual increase in memory usage.</li>
+  <li><strong>Fragmentation:</strong> Non-contiguous allocation/deallocation leads to inefficient memory use.</li>
+  <li><strong>Data Structures:</strong> Choice impacts footprint; efficient structures improve cache locality.</li>
+  <li><strong>Stack and Heap Usage:</strong> Stack overflow vs heap fragmentation trade-offs.</li>
+  <li><strong>Data Sharing and Copying:</strong> Sharing reduces footprint; copying increases it.</li>
+  <li><strong>Caching:</strong> Efficient cache use reduces access times.</li>
+  <li><strong>Garbage Collection:</strong> In GC languages (Java/C#), efficient GC strategy maintains stable footprint.</li>
+</ul>
+
+<h2>5.8 Nesting and Synchronization Depth</h2>
+<h3>Nesting Depth</h3>
+<p>The number of levels of nested parallel computations within a program. A higher-level task spawns multiple lower-level tasks, which can spawn their own. High nesting depth is common in recursive or divide-and-conquer algorithms. Allows expressive algorithm design but introduces load balancing, resource management, and synchronization challenges.</p>
+<h3>Synchronization Depth</h3>
+<p>The level of synchronization points/barriers within a parallel computation. Excessive sync introduces bottlenecks — threads wait for others, causing idle time.</p>
+<h3>Balancing Nesting and Sync Depth</h3>
+<ul>
+  <li><strong>Load Balancing:</strong> Even work distribution prevents idle time.</li>
+  <li><strong>Minimize Synchronization:</strong> Use async communication or lock-free techniques.</li>
+  <li><strong>Task Granularity:</strong> Choose appropriate task size.</li>
+  <li><strong>Optimized Data Access:</strong> Minimize data movement; improve cache efficiency.</li>
+  <li><strong>Profiling and Tuning:</strong> Analyze behavior; identify bottlenecks.</li>
+  <li><strong>Hybrid Approaches:</strong> Combine multi-threading with multi-processing or GPU acceleration.</li>
+</ul>
+
+<h2>5.9 Pending Kernel Launches</h2>
+<p>Pending kernel launches occur when a GPU kernel cannot start immediately due to resource limitations or dependencies. The kernel is placed in a <strong>pending queue</strong>.</p>
+<h3>Causes</h3>
+<ul>
+  <li><strong>GPU Resource Availability:</strong> GPU already fully occupied with active kernels.</li>
+  <li><strong>Synchronization Dependencies:</strong> Kernels with explicit dependencies wait on prior kernels.</li>
+  <li><strong>Asynchronous Execution:</strong> Async kernels queued for later execution per GPU scheduling.</li>
+  <li><strong>Dynamic Parallelism:</strong> Child kernels may queue until parent completes.</li>
+  <li><strong>Concurrent Kernel Launches:</strong> On some architectures, multiple kernels launch concurrently; ordering influenced by scheduling policies.</li>
+</ul>
+<h3>Addressing Pending Launches</h3>
+<ul>
+  <li>Reduce kernel launch overhead — consolidate small kernels.</li>
+  <li>Use asynchronous execution to overlap computation and communication.</li>
+  <li>Optimize kernel dependencies — design algorithms to work independently.</li>
+  <li>Efficient GPU resource management.</li>
+  <li>Be cautious with dynamic parallelism; manage nested depth.</li>
+  <li>Profile and tune; understand the specific GPU architecture.</li>
+</ul>
+
+<h2>5.10 Configuration Options</h2>
+<ul>
+  <li><strong>Thread Block Size and Grid Dimensions:</strong> Optimize thread utilization, memory access patterns, load balancing. Choice affects shared memory usage and register pressure.</li>
+  <li><strong>Shared Memory Usage:</strong> Configure amount per block; reduce access latency; improve data reuse.</li>
+  <li><strong>Memory Access Patterns:</strong> Use different memory spaces (global, shared, constant); optimize organization and alignment.</li>
+  <li><strong>Parallelization Strategies:</strong> Data parallelism, task parallelism, or hybrid.</li>
+  <li><strong>GPU Compute Capability:</strong> Tailor to specific features (warp shuffle, atomics).</li>
+  <li><strong>Synchronization and Memory Barriers:</strong> Select appropriate sync mechanism.</li>
+  <li><strong>Precision Settings:</strong> Single vs double precision based on accuracy needs.</li>
+  <li><strong>Dynamic Parallelism:</strong> Control nested kernel depth.</li>
+  <li><strong>SM Settings:</strong> Configure thread blocks per SM.</li>
+  <li><strong>Memory Pooling and Caching:</strong> Custom pooling to minimize allocation overhead.</li>
+</ul>
+
+<h2>5.11 Memory Allocation and Lifetime</h2>
+<h3>Memory Allocation</h3>
+<ul>
+  <li><strong>Data Placement:</strong> Decide what lives in global memory vs shared memory.</li>
+  <li><strong>Static vs Dynamic Allocation:</strong> Static at compile time; dynamic at runtime.</li>
+  <li><strong>Memory Alignment:</strong> Align data for efficient vectorized access.</li>
+  <li><strong>Memory Coalescing:</strong> Optimize access patterns for coalescing.</li>
+</ul>
+<h3>Memory Lifetime</h3>
+<ul>
+  <li><strong>Explicit Deallocation:</strong> Programmer must free memory when no longer needed.</li>
+  <li><strong>Automatic Memory Management:</strong> C++11 smart pointers reduce leak risk.</li>
+  <li><strong>Scope and Visibility:</strong> Allocate within appropriate scope; align lifetime with computation needs.</li>
+  <li><strong>Data Dependencies:</strong> Retain memory until dependent computations complete.</li>
+  <li><strong>Memory Reuse:</strong> Pooling/caching to reuse memory across iterations/blocks.</li>
+  <li><strong>Shared Memory Management:</strong> Limited resource; manage carefully to avoid contention.</li>
+  <li><strong>Memory Transfer:</strong> Minimize host↔device transfers; use appropriate memory spaces.</li>
+</ul>
+
+<h2>Case Study: Accelerating Genetic Algorithms with GPU Computing</h2>
+<p><em>Source: Unit V PDF — Case Study section.</em></p>
+
+<h3>Background</h3>
+<p>Genetic Algorithms (GAs) are optimization techniques inspired by natural selection. Their computational demands can be significant, particularly for large-scale problems. GPU computing parallelizes GA execution to achieve significant speedup.</p>
+
+<h3>GA Components</h3>
+<ul>
+  <li><strong>Representation:</strong> Solutions encoded as genes/chromosomes.</li>
+  <li><strong>Population:</strong> Set of potential solutions.</li>
+  <li><strong>Fitness Evaluation:</strong> Each solution evaluated via objective function.</li>
+  <li><strong>Selection:</strong> Fitter individuals more likely to be chosen.</li>
+  <li><strong>Crossover:</strong> Exchange genetic information to create offspring.</li>
+  <li><strong>Mutation:</strong> Random changes for diversity.</li>
+  <li><strong>Termination:</strong> Fixed generations or criterion met.</li>
+</ul>
+
+<h3>GPU Acceleration</h3>
+<p>The most computationally intensive step is <strong>fitness evaluation</strong> — perfect for GPU acceleration since each solution's fitness can be evaluated independently. The population is divided into blocks; each block is processed by different GPU threads. Other components (selection, crossover, mutation) can also be parallelized.</p>
+
+<h3>Advantages</h3>
+<ul>
+  <li><strong>Increased Throughput:</strong> Faster convergence and shorter optimization times.</li>
+  <li><strong>Scalability:</strong> Maintains efficiency as problem size increases.</li>
+  <li><strong>Exploration of Complex Landscapes:</strong> Faster fitness evaluation enables deeper exploration.</li>
+  <li><strong>Better Solution Quality:</strong> Broader range of solutions explored.</li>
+</ul>
+
+<h3>Challenges</h3>
+<ul>
+  <li><strong>Memory Management:</strong> Limited GPU memory; efficient management essential to avoid transfer bottlenecks.</li>
+  <li><strong>Thread Divergence:</strong> Stochastic GA processes may cause divergence.</li>
+  <li><strong>Algorithm Design:</strong> Not all GA operations parallelize efficiently; some remain sequential.</li>
+</ul>
+
+<h3>Real-World Applications</h3>
+<ul>
+  <li><strong>Engineering:</strong> Optimizing complex engineering designs.</li>
+  <li><strong>Finance:</strong> Portfolio optimization and risk management.</li>
+  <li><strong>Machine Learning:</strong> Hyperparameter tuning, neural architecture search.</li>
+  <li><strong>Scientific Simulations:</strong> Optimizing simulation parameters.</li>
+</ul>
+
+<div class="note">
+  <strong>PDF conclusion:</strong> GPU computing presents an exciting opportunity to accelerate genetic algorithms, enhancing their capabilities in optimization and search problems. As GPU technology advances, the integration of GAs and GPU computing is poised to revolutionize optimization and AI domains.
+</div>
+</div>
+          `
+        }
+      ]
+    }
+  ]
+};
+
+const flashcardData = [
+  [
+    {q:"What does APOD stand for?",a:"Assess, Parallelize, Optimize, Deploy — NVIDIA's iterative methodology for CUDA application optimization. (Additional exam material, not in supplied Unit III PDF.)"},
+    {q:"Name 4 CUDA development challenges.",a:"1) PCIe data transfer overhead. 2) Warp divergence in conditional branches. 3) Memory access bottlenecks (uncoalesced/bank conflicts). 4) Register spilling / register pressure."},
+    {q:"5 CUDA memory spaces?",a:"Registers (thread-private, fastest), Shared (block-shared, on-chip), Global (off-chip DRAM), Constant (read-only cached), Local (per-thread off-chip — NOT exclusively register spills; also holds large local arrays and stack frames)."},
+    {q:"Can the host CPU directly dereference device global memory?",a:"No. Host must use cudaMemcpy() or Unified Memory page migration. Device global memory is accessed via explicit transfers."},
+    {q:"Are latency/capacity values like '400–800 cycles' or '48KB shared memory' universal?",a:"No — they are typical examples that vary by GPU architecture. Always query cudaGetDeviceProperties() for actual values on a given device."},
+    {q:"Thread indexing formula (1D)?",a:"Global Index i = blockIdx.x × blockDim.x + threadIdx.x"},
+    {q:"What is a warp?",a:"A group of 32 threads that execute simultaneously under SIMT (Single Instruction, Multiple Threads) model on an SM."},
+    {q:"What is a self-tuning CUDA application?",a:"An app that adapts runtime parameters (block size, grid dims, tile sizes) using cudaGetDeviceProperties() and the occupancy calculator to maximize performance across GPU architectures."},
+    {q:"Problem decomposition steps (per PDF)?",a:"1) Divide and conquer — break into independent tasks. 2) Work distribution — even across threads. 3) Divide into work units. 4) Organize into thread blocks and grids."},
+    {q:"GPU execution model stages?",a:"1) cudaMalloc 2) cudaMemcpy H2D 3) Kernel launch &lt;&lt;&lt;grid,block&gt;&gt;&gt; 4) GPU scheduler distributes blocks to SMs 5) SMs split into warps (SIMT) 6) cudaMemcpy D2H 7) cudaFree"},
+    {q:"What is the GPU hardware scheduler (sometimes called GigaThread Engine)?",a:"GPU hardware that accepts kernel launches and distributes thread blocks across available Streaming Multiprocessors based on hardware capacity."},
+    {q:"Multi-GPU programming techniques (per PDF)?",a:"1) Parallel data partitioning. 2) Parallel task decomposition. 3) Data aggregation. 4) Task synchronization. P2P memory access enables direct GPU-to-GPU transfer without CPU round-trip."}
+  ],
+  [
+    {q:"5 PDF CUDA error categories?",a:"1) Kernel launch failures (invalid grid/block). 2) Memory management errors (alloc/dealloc/access). 3) Synchronization errors (missing __syncthreads). 4) Driver errors (outdated/incompatible). 5) API call errors (invalid arguments/pointers)."},
+    {q:"Are register spilling and warp divergence CUDA error categories?",a:"NO. They are performance issues, not runtime error categories. (Earlier HTML incorrectly listed them as error categories — now fixed.)"},
+    {q:"What is PTX?",a:"Parallel Thread Execution — architecture-independent intermediate representation generated by NVCC, JIT-compiled to native SASS machine code at runtime."},
+    {q:"4 common parallel programming issues?",a:"1) Data races (unsynchronized shared writes). 2) Deadlocks (circular resource wait). 3) Load imbalance. 4) Synchronization overhead."},
+    {q:"4 deadlock conditions?",a:"1) Mutual exclusion. 2) Hold and wait. 3) No preemption. 4) Circular wait."},
+    {q:"cudaGetLastError() vs cudaPeekAtLastError()?",a:"cudaGetLastError() returns AND clears the error. cudaPeekAtLastError() inspects WITHOUT clearing."},
+    {q:"Why use cudaDeviceSynchronize() after kernel launch?",a:"Kernel launches are asynchronous. cudaDeviceSynchronize() blocks the host until all GPU work completes, capturing any async execution errors (e.g., illegal address access)."},
+    {q:"Why is float division by zero NOT a CUDA runtime error?",a:"IEEE-754 float division by zero produces Inf, not a synchronous GPU fault. Use out-of-bounds device memory access to demonstrate a real CUDA error like cudaErrorIllegalAddress."},
+    {q:"3 strategies to find CUDA errors?",a:"1) Error-checking macros wrapping API calls. 2) cudaDeviceSynchronize() after kernel launches. 3) Profilers: Nsight Systems, Nsight Compute, CUDA-GDB."},
+    {q:"What is register spilling?",a:"When per-thread register usage exceeds SM limits, variables overflow to slow off-chip local memory, degrading performance. (A performance issue, not an error category.)"},
+    {q:"What is warp divergence?",a:"When threads in the same 32-thread warp take different branches (if-else), forcing serialization of execution paths. (A performance issue, not an error category.)"},
+    {q:"Resource contention types?",a:"1) Memory bandwidth contention. 2) Shared memory bank conflicts. 3) Register pressure (spilling). Plus general: CPU, I/O, and synchronization contention."},
+    {q:"Amdahl's Law?",a:"Speedup = 1 / [(1-P) + P/N], where P = parallel fraction, N = processors. Speedup is bounded by the serial fraction (1-P)."},
+    {q:"NVCC compilation stages?",a:"1) .cu source (host+device). 2) Preprocessing. 3) Host code → host object files (via GCC/MSVC). 4) Device code → PTX. 5) PTX → SASS via JIT at runtime. 6) Linking → final executable."},
+    {q:"PTX compatibility rule?",a:"PTX generated for compute capability X runs on any GPU with CC ≥ X. It does NOT run on lower CC. A single PTX binary can run on multiple GPU generations without recompilation."},
+    {q:"Runtime API vs Driver API?",a:"Runtime API is high-level, simpler, commonly used. Driver API is low-level, finer-grained control, used for specific advanced use cases."},
+    {q:"Are C++ exceptions supported in CUDA device code?",a:"No. Use CUDA-specific error handling (return codes, cudaGetLastError) instead of try-catch in kernels."}
+  ],
+  [
+    {q:"What is a sparse matrix?",a:"A matrix where the majority of elements are zero. Stored in compressed formats like CSR to save memory."},
+    {q:"3 CSR arrays?",a:"data[] (non-zero values), col_index[] (column indices), row_ptr[] (starting index of each row in data[], plus end marker)."},
+    {q:"Inclusive prefix sum formula?",a:"y[i] = Σ(x[j]) for j=0 to i. Each output includes the current input element."},
+    {q:"What is convolution?",a:"An array operation where each output is a weighted sum of neighboring input elements using a sliding mask/kernel."},
+    {q:"What are ghost/halo elements?",a:"Missing input elements at array boundaries, assumed to be 0, used to compute boundary convolution outputs."},
+    {q:"Why is convolution good for GPU?",a:"Massive data parallelism — every output pixel is independent. Shared memory tiling reduces redundant global memory reads."},
+    {q:"Blelloch scan phases?",a:"1) Upsweep (Reduction): bottom-up pairwise sums at increasing strides. 2) Downsweep (Distribution): top-down distribute partial sums from root."},
+    {q:"Why Blelloch over Hillis-Steele?",a:"Blelloch is work-efficient: O(N) total work vs O(N log N) for Hillis-Steele. Better for power-constrained GPU environments."},
+    {q:"Blelloch kernel boundary fixes?",a:"1) Threads with i ≥ InputSize must initialize their shared-memory slot to 0. 2) Y[i] must be written only when i < InputSize. 3) Multi-block scan needs hierarchical add-back stage."},
+    {q:"Convolution kernel boundary fixes?",a:"1) Outer guard: if (i < Width) prevents threads beyond Width from writing P. 2) Inner guard: skip ghost elements at array ends."},
+    {q:"4 OpenCL models?",a:"1) Platform Model (Host + Devices + CUs + PEs). 2) Execution Model (Kernels + NDRange). 3) Memory Model (Global/Constant/Local/Private). 4) Programming Model (Data/Task parallel)."},
+    {q:"Do work-groups map 1:1 to compute units?",a:"NO — work-groups are SCHEDULED onto compute units. A CU can host multiple work-groups concurrently if resources allow; a work-group runs entirely within one CU and cannot span CUs."},
+    {q:"CUDA ↔ OpenCL mapping?",a:"Thread→Work-Item, Block→Work-Group, Grid→NDRange, SM→Compute Unit, Core→Processing Element."},
+    {q:"What is dynamic parallelism?",a:"A feature allowing kernels to launch child kernels from within the parent kernel, enabling nested parallelism without returning to CPU."},
+    {q:"Dynamic parallelism overheads?",a:"1) Kernel launch overhead (significant for small children). 2) Thread block management. 3) Synchronization overhead. 4) Data movement. 5) Workload imbalance. 6) Recursive algorithm overhead."},
+    {q:"Mitigations for dynamic parallelism overhead?",a:"1) Kernel fusion. 2) Recursive depth limit. 3) Asynchronous execution. 4) Load balancing. 5) Profiling."},
+    {q:"GPU algorithm restrictions?",a:"1) Data dependencies limit gains. 2) Memory constraints (registers, shared, global bandwidth). 3) Thread divergence. 4) Kernel launch overhead. 5) Branching. 6) Limited double-precision. 7) Host-device transfer overhead."},
+    {q:"Runtime-memory footprint components?",a:"Static (compile-time: globals, constants, code) + Dynamic (runtime: heap via malloc/new, stack for locals and call frames)."},
+    {q:"Nesting vs synchronization depth?",a:"Nesting depth = levels of nested parallelism. Synchronization depth = levels of sync points/barriers. High nesting enables parallelism but increases sync overhead."},
+    {q:"Pending kernel launches?",a:"Kernels that cannot start immediately due to resource limits or dependencies; placed in a pending queue until conditions are met."},
+    {q:"CSR SpMV: what does each thread do?",a:"Each thread computes one row of output Y by iterating from row_ptr[row] to row_ptr[row+1], accumulating data[i] × x[col_index[i]]."},
+    {q:"CSR SpMV performance issues?",a:"1) Load imbalance (uneven non-zeros per row). 2) Indirect memory access via x[col_index[i]] causes non-coalesced reads."}
+  ]
+];
+
+let currentUnit = 0;
+let currentSection = 0;
+let readSections = new Set();
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = '';
+  courseData.units.forEach((unit, ui) => {
+    const btn = document.createElement('button');
+    btn.className = 'unit-btn' + (ui === currentUnit ? ' active' : '');
+    btn.innerHTML = unit.title + '<span class="ch">▸</span>';
+    btn.onclick = () => { currentUnit = ui; currentSection = 0; renderSidebar(); renderContent(); };
+    nav.appendChild(btn);
+    const list = document.createElement('div');
+    list.className = 'sec-list' + (ui === currentUnit ? ' open' : '');
+    unit.sections.forEach((sec, si) => {
+      const link = document.createElement('a');
+      link.className = 'sec-link' + (ui === currentUnit && si === currentSection ? ' active' : '');
+      let tagHtml = '';
+      if (sec.id.includes('mg') || sec.id.includes('nvcc') || sec.id.includes('dp') || sec.id.includes('extra')) {
+        tagHtml = '<span class="tag-mini new">NEW</span>';
+      } else if (sec.id === 'u4q3' || sec.id === 'u4q8' || sec.id === 'u5q9' || sec.id === 'u5blelloch' || sec.id === 'u3q5') {
+        tagHtml = '<span class="tag-mini fix">FIX</span>';
+      }
+      link.innerHTML = sec.title + tagHtml;
+      link.onclick = (e) => { e.preventDefault(); currentUnit = ui; currentSection = si; renderSidebar(); renderContent(); };
+      list.appendChild(link);
+    });
+    nav.appendChild(list);
+  });
+}
+
+function renderContent() {
+  const area = document.getElementById('contentArea');
+  const unit = courseData.units[currentUnit];
+  const sec = unit.sections[currentSection];
+  let html = sec.content;
+  const prevDisabled = currentUnit === 0 && currentSection === 0;
+  const nextDisabled = currentUnit === courseData.units.length - 1 && currentSection === unit.sections.length - 1;
+  let prevTarget = null, nextTarget = null;
+  if (!prevDisabled) {
+    if (currentSection > 0) prevTarget = [currentUnit, currentSection - 1];
+    else prevTarget = [currentUnit - 1, courseData.units[currentUnit - 1].sections.length - 1];
+  }
+  if (!nextDisabled) {
+    if (currentSection < unit.sections.length - 1) nextTarget = [currentUnit, currentSection + 1];
+    else nextTarget = [currentUnit + 1, 0];
+  }
+  html += `<div class="top-nav">`;
+  html += `<button class="nav-btn" ${prevDisabled ? 'disabled' : ''} onclick="${prevTarget ? `jumpTo(${prevTarget[0]},${prevTarget[1]})` : ''}">← Previous</button>`;
+  html += `<span style="font-size:13px; color:var(--text-tertiary);">${currentSection + 1} of ${unit.sections.length}</span>`;
+  html += `<button class="nav-btn" ${nextDisabled ? 'disabled' : ''} onclick="${nextTarget ? `jumpTo(${nextTarget[0]},${nextTarget[1]})` : ''}">Next →</button>`;
+  html += `</div>`;
+  if (currentSection === unit.sections.length - 1 && flashcardData[currentUnit]) {
+    html += `<h2 style="margin-top:40px; font-size:20px;">Quick Review Flashcards</h2>`;
+    html += `<p style="font-size:13px; color:var(--text-tertiary); margin-bottom:16px;">Click cards to reveal answers</p>`;
+    flashcardData[currentUnit].forEach((card) => {
+      html += `<div class="flashcard" onclick="this.classList.toggle('flipped')">
+        <div class="fc-q">${card.q}</div>
+        <div class="fc-a">${card.a}</div>
+        <div class="fc-hint">Click to flip</div>
+      </div>`;
+    });
+  }
+  area.innerHTML = html;
+  readSections.add(sec.id);
+  updateProgress();
+  window.scrollTo(0, 0);
+}
+
+function updateProgress() {
+  const total = courseData.units.reduce((a, u) => a + u.sections.length, 0);
+  const pct = Math.round((readSections.size / total) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = pct + '% complete';
+}
+
+function jumpTo(ui, si) {
+  currentUnit = ui; currentSection = si;
+  renderSidebar(); renderContent();
+}
+
+function setupSearch() {
+  const box = document.getElementById('searchBox');
+  const res = document.getElementById('searchResults');
+  box.addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    if (!q) { res.style.display = 'none'; return; }
+    const matches = [];
+    courseData.units.forEach((u, ui) => {
+      u.sections.forEach((s, si) => {
+        const text = (s.title + ' ' + s.content.replace(/<[^>]+>/g, ' ')).toLowerCase();
+        if (text.includes(q)) {
+          const rawText = s.content.replace(/<[^>]+>/g, ' ');
+          const idx = text.indexOf(q);
+          const snippet = rawText.substring(Math.max(0, idx - 30), idx + 60);
+          matches.push({ui, si, title: s.title, snippet: '...' + snippet + '...'});
+        }
+      });
+    });
+    if (!matches.length) { res.innerHTML = '<div class="search-result"><span style="color:var(--text-tertiary)">No results</span></div>'; }
+    else {
+      res.innerHTML = matches.map(m => `<div class="search-result" onclick="jumpTo(${m.ui},${m.si}); document.getElementById('searchResults').style.display='none'; document.getElementById('searchBox').value='';">
+        <div class="sr-title">${m.title}</div>
+        <div class="sr-snippet">${m.snippet}</div>
+      </div>`).join('');
+    }
+    res.style.display = 'block';
+  });
+  document.addEventListener('click', (e) => {
+    if (!box.contains(e.target) && !res.contains(e.target)) res.style.display = 'none';
+  });
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open');
+}
+
+renderSidebar();
+renderContent();
+setupSearch();
+</script>
+</body>
+</html>
